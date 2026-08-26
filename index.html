@@ -612,8 +612,11 @@
    anon 키는 브라우저에 노출된다. 그래서 DB 쪽에서 INSERT 만 허용하고
    SELECT 는 막아뒀다 — 키가 새어도 남의 리드를 읽을 수 없다.
    ══════════════════════════════════════ */
-const SB_URL='https://ihogcixagthalleiczfw.supabase.co';
-const SB_KEY='sb_publishable_qENneC80MyZD6Gz0l6NlZg_g7HCkAJH';
+/* 빚탈길 전용 프로젝트(2026-08-26 신설, 서울 리전).
+   전에는 신용톡톡 프로젝트에 얹혀 있었다 — 운영 주체가 다른 서비스의
+   개인정보를 한 DB 에 두면 제3자 제공 문제가 되므로 분리했다. */
+const SB_URL='https://eapompomalqhlkzbkdvc.supabase.co';
+const SB_KEY='sb_publishable_aazxQRK3-gSIRGJ6zHND9w_lE-9Ly9t';
 
 /* 유입 경로 — 첫 방문 시점의 것을 잡아둔다.
    해시 라우팅이라 나중에 읽으면 utm 이 이미 사라져 있다. */
