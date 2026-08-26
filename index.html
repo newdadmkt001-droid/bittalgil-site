@@ -76,6 +76,9 @@
   .bd{font-size:var(--fs-b);font-weight:500;line-height:var(--lh5);color:var(--t2)}
   .cap{font-size:var(--fs-m);font-weight:500;line-height:var(--lh5);color:var(--t3)}
   .fine{font-size:var(--fs-m);font-weight:500;line-height:var(--lh5);color:var(--t4)}
+  /* 전송 실패 안내 — 실패를 조용히 넘기지 않는다 */
+  .formerr.bad{color:var(--warn);padding:var(--s3) var(--s4);border-radius:var(--r-sm);
+    background:rgba(248,113,113,.10);border:1px solid rgba(248,113,113,.28)}
   .kick{font-size:var(--fs-m);font-weight:700;color:var(--key)}
 
   /* ══ 인터랙션② 프레스 스프링 (toss 실측 오버슈트) ══ */
@@ -605,6 +608,62 @@
 <div class="anly" id="anly"><div><div class="bars"><i></i><i></i><i></i><i></i></div><h3 class="d3">판정 중</h3></div></div>
 
 <script>
+/* ══════════════ 리드 전송 ══════════════
+   anon 키는 브라우저에 노출된다. 그래서 DB 쪽에서 INSERT 만 허용하고
+   SELECT 는 막아뒀다 — 키가 새어도 남의 리드를 읽을 수 없다.
+   ══════════════════════════════════════ */
+const SB_URL='https://ihogcixagthalleiczfw.supabase.co';
+const SB_KEY='sb_publishable_qENneC80MyZD6Gz0l6NlZg_g7HCkAJH';
+
+/* 유입 경로 — 첫 방문 시점의 것을 잡아둔다.
+   해시 라우팅이라 나중에 읽으면 utm 이 이미 사라져 있다. */
+const TRACK=(()=>{
+  const KEY='btg_track';
+  try{
+    const saved=sessionStorage.getItem(KEY);
+    if(saved) return JSON.parse(saved);
+    const q=new URLSearchParams(location.search);
+    const t={
+      session_id: (crypto.randomUUID? crypto.randomUUID() : String(Date.now())+Math.random()),
+      landing_path: location.pathname+location.search+location.hash,
+      first_referrer: document.referrer||null,
+      utm_source:q.get('utm_source'), utm_medium:q.get('utm_medium'),
+      utm_campaign:q.get('utm_campaign'), utm_content:q.get('utm_content'),
+      utm_term:q.get('utm_term'),
+      user_agent: navigator.userAgent,
+      device: matchMedia('(max-width:759px)').matches? 'mobile':'desktop'
+    };
+    sessionStorage.setItem(KEY, JSON.stringify(t));
+    return t;
+  }catch(e){ return {}; }
+})();
+
+const digits=s=>String(s||'').replace(/[^0-9]/g,'');
+
+/* 같은 번호로 연달아 보내는 것만 막는다(오클릭·재제출).
+   진짜 스팸 차단은 서버가 할 일이지 브라우저가 할 일이 아니다. */
+function recentlySent(phone){
+  try{
+    const k='btg_sent_'+phone, last=+(localStorage.getItem(k)||0);
+    if(Date.now()-last < 60*1000) return true;
+    localStorage.setItem(k, String(Date.now()));
+    return false;
+  }catch(e){ return false; }
+}
+
+async function sendLead(payload){
+  const r=await fetch(SB_URL+'/rest/v1/bittalgil_leads',{
+    method:'POST',
+    headers:{apikey:SB_KEY, Authorization:'Bearer '+SB_KEY,
+             'Content-Type':'application/json', Prefer:'return=minimal'},
+    body:JSON.stringify({...TRACK, ...payload})
+  });
+  if(!r.ok){
+    const t=await r.text().catch(()=>'');
+    throw new Error('HTTP '+r.status+' '+t.slice(0,160));
+  }
+}
+
 const BIZ={firm:'법무법인 현암',lawyer:'정창희',ceo:'이상곤',biz:'156-85-02574',
   addr:'서울특별시 서초구 서초중앙로22길 97, 5층',tel:'1668-5831',email:'hyeonam@lawfirm.co.kr'};
 
@@ -1263,24 +1322,37 @@ function bind(key){
     renderQ();
     document.getElementById('qb2').onclick=()=>{if(qi===0)go('#/diagnosis');else{qi--;renderQ('bk');}};}
   if(key==='/result'){
-    document.getElementById('gf').onsubmit=e=>{e.preventDefault();
+    const f=document.getElementById('gf');
+    f.onsubmit=e=>{e.preventDefault();
       const n=document.getElementById('nm'),t=document.getElementById('tl'),a=document.getElementById('ag');
       let ok=true;n.classList.remove('err');t.classList.remove('err');
       if(!n.value.trim()){n.classList.add('err');ok=false;}
       if(!/^01[016789][-\s]?\d{3,4}[-\s]?\d{4}$/.test(t.value.trim())){t.classList.add('err');ok=false;}
       if(!a.checked||!ok)return;
-      sessionStorage.setItem('kn',n.value.trim());go('#/done');};
+      submitLead(f,{
+        name:n.value.trim(), phone:digits(t.value), form:'result',
+        answers:ans.slice(), calc:RESULT?RESULT.calc:null,
+        eligible:RESULT?RESULT.isEligible:null
+      });};
   }
   if(key==='/result')initStage();
   if(key==='/done'){const n=sessionStorage.getItem('kn');const d=document.getElementById('dn');if(d)d.textContent=n?n+'님':'';HAP.success();}
   if(key==='/consult'){
-    document.getElementById('cf').onsubmit=e=>{e.preventDefault();
+    const cf=document.getElementById('cf');
+    cf.onsubmit=e=>{e.preventDefault();
       const n=document.getElementById('cn'),t=document.getElementById('ct'),g=document.getElementById('cg');
       let ok=true;n.classList.remove('err');t.classList.remove('err');
       if(!n.value.trim()){n.classList.add('err');ok=false;}
       if(!/^01[016789][-\s]?\d{3,4}[-\s]?\d{4}$/.test(t.value.trim())){t.classList.add('err');ok=false;}
       if(!g.checked||!ok)return;
-      sessionStorage.setItem('kn',n.value.trim());go('#/done');};
+      /* 이 두 값은 그동안 아무도 읽지 않고 버려지고 있었다 */
+      const sel=document.getElementById('ca');
+      const chip=document.querySelector('#ch button.on');
+      submitLead(cf,{
+        name:n.value.trim(), phone:digits(t.value), form:'consult',
+        debt_band: sel? sel.value : null,
+        call_time: chip? chip.textContent.trim() : null
+      });};
   }
 }
 /* ?audit 으로 열면 대비를 계산해 콘솔에 찍는다.
@@ -1438,6 +1510,33 @@ function renderQ(dir){
     o.classList.add('sel');ans[qi]=+o.dataset.i;
     setTimeout(()=>{if(qi<8){qi++;renderQ();}else finish();},220);});
 }
+/* 폼 제출 — 저장에 성공했을 때만 "접수됐습니다"로 보낸다.
+   실패했는데 접수됐다고 말하면, 사용자는 오지 않을 전화를 기다리게 된다. */
+async function submitLead(form, payload){
+  const btn=form.querySelector('button[type=submit]');
+  const label=btn.textContent;
+  let err=form.querySelector('.formerr');
+  if(!err){ err=el('<p class="formerr fine" role="alert"></p>'); form.appendChild(err); }
+  err.textContent='';
+
+  if(recentlySent(payload.phone)){
+    /* 이미 보낸 번호 — 중복 저장 대신 완료 화면으로 넘긴다 */
+    sessionStorage.setItem('kn',payload.name); go('#/done'); return;
+  }
+
+  btn.disabled=true; btn.textContent='보내는 중…';
+  try{
+    await sendLead({...payload, consent:true, consent_at:new Date().toISOString()});
+    sessionStorage.setItem('kn',payload.name);
+    go('#/done');
+  }catch(e){
+    btn.disabled=false; btn.textContent=label;
+    err.textContent='전송에 실패했습니다. 잠시 후 다시 시도하시거나 '+BIZ.tel+' 로 전화 주세요.';
+    err.classList.add('bad');
+    console.error('lead submit failed:', e.message);
+  }
+}
+
 /* 진단 결과 — 답이 바뀔 때마다 다시 계산해 여기 담는다 */
 let RESULT=null;
 
