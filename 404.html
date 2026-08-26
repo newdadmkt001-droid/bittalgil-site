@@ -664,6 +664,13 @@ async function sendLead(payload){
   }
 }
 
+/* 두 주체를 분리한다 — 퍼널(빚탈길)의 운영사와 법률사무를 수행하는 법인은 다르다.
+   OP  = 사이트 운영·광고 주체. 개인정보 수집 주체도 여기다.
+   BIZ = 법률사무 수행 법인. 광고책임변호사 표기는 반드시 이쪽 이름으로 나간다.
+   법무법인이 교체되면 BIZ 만 갈면 된다 (퍼널 자체가 브랜드라는 원칙). */
+const OP={name:'비즈니스루프',ceo:'김소희',biz:'306-14-66080',
+  addr:'부산광역시 해운대구 센텀중앙로 48, 1109호 (우동, 에이스하이테크21)'};
+
 const BIZ={firm:'법무법인 현암',lawyer:'정창희',ceo:'이상곤',biz:'156-85-02574',
   addr:'서울특별시 서초구 서초중앙로22길 97, 5층',tel:'1668-5831',email:'hyeonam@lawfirm.co.kr'};
 
@@ -910,9 +917,11 @@ const foot=()=>`<footer class="foot"><div class="wrap">
     <div><h4>서비스</h4><ul><li><a href="#/diagnosis">변제금 진단</a></li><li><a href="#/solutions">해법 사전</a></li><li><a href="#/consult">상담 신청</a></li></ul></div>
     <div><h4>알아보기</h4><ul><li><a href="#/columns">칼럼</a></li><li><a href="#/cases">사례</a></li><li><a href="#/faq">FAQ</a></li><li><a href="#/about">소개·오시는 길</a></li><li><a href="#/privacy">개인정보처리방침</a></li><li><a href="#/terms">이용약관</a></li></ul></div>
   </div>
-  <p class="biz"><b>${BIZ.firm}</b> · 대표 ${BIZ.ceo} · 광고책임변호사 ${BIZ.lawyer}<br>
-  사업자등록번호 ${BIZ.biz} · ${BIZ.addr}<br>${BIZ.tel} · ${BIZ.email}<br>
-  법률상담 연결 서비스이며, 진단 결과는 참고용입니다.</p>
+  <p class="biz"><b>${OP.name}</b> · 대표 ${OP.ceo} · 사업자등록번호 ${OP.biz}<br>
+  ${OP.addr}<br>
+  <span style="display:inline-block;margin-top:.6em">법률사무 수행 <b>${BIZ.firm}</b> · 대표 ${BIZ.ceo} · 광고책임변호사 ${BIZ.lawyer}<br>
+  사업자등록번호 ${BIZ.biz} · ${BIZ.addr}<br>${BIZ.tel} · ${BIZ.email}</span><br>
+  <span style="display:inline-block;margin-top:.6em">빚탈길은 ${OP.name}가 운영하며, 법률사무는 ${BIZ.firm}이 수행합니다. 진단 결과는 참고용입니다.</span></p>
 </div></footer>`;
 const phead=(k,t,d)=>`<header class="phead"><div class="in">
   <span class="kick rv">${k}</span><h1 class="d2 rv">${t}</h1>${d?`<p class="bd rv">${d}</p>`:''}</div></header>`;
@@ -1110,7 +1119,7 @@ R.result=()=>{
   <form class="form" id="gf" novalidate>
     <div class="fi"><input type="text" id="nm" placeholder="이름" autocomplete="name"></div>
     <div class="fi"><input type="tel" id="tl" placeholder="연락처" autocomplete="tel" inputmode="numeric"></div>
-    <label class="agree"><input type="checkbox" id="ag"><span>결과 안내를 위한 개인정보 수집·이용에 동의합니다.</span></label>
+    <label class="agree"><input type="checkbox" id="ag"><span>결과 안내를 위한 개인정보 수집·이용 및 상담 진행 시 ${BIZ.firm} 제공에 동의합니다.</span></label>
     <button class="btn blk" type="submit">결과 확인하기</button>
   </form>
   <p class="fine" style="text-align:center">상담료 0원 · 당일 연락</p>
@@ -1198,7 +1207,15 @@ ${phead('소개','가장 어려운 건<br>첫 걸음입니다')}
   <div class="card rv"><div class="lw"><div class="ph">정</div><div class="tx">
     <div class="d3">${BIZ.lawyer} 변호사</div><div class="cap">${BIZ.firm} · 광고책임변호사</div></div></div>
     <span class="todo">실사진 대기</span></div>
-  <h2 class="d3 rv">법인 정보</h2>
+  <h2 class="d3 rv">운영사 정보</h2>
+  <div class="rows rv">
+    <div class="row"><span class="cap">상호</span><span class="bd" style="margin-left:auto">${OP.name}</span></div>
+    <div class="row"><span class="cap">대표</span><span class="bd" style="margin-left:auto">${OP.ceo}</span></div>
+    <div class="row"><span class="cap">사업자등록번호</span><span class="bd" style="margin-left:auto">${OP.biz}</span></div>
+    <div class="row"><span class="cap">사업장 소재지</span><span class="bd" style="margin-left:auto">${OP.addr}</span></div>
+  </div>
+  <p class="fine rv">빚탈길은 ${OP.name}가 운영하는 진단·상담 연결 서비스입니다. 법률사무는 아래 법인이 수행합니다.</p>
+  <h2 class="d3 rv">법률사무 수행 법인</h2>
   <div class="rows rv">
     <div class="row"><span class="cap">법인명</span><span class="bd" style="margin-left:auto">${BIZ.firm}</span></div>
     <div class="row"><span class="cap">대표</span><span class="bd" style="margin-left:auto">${BIZ.ceo}</span></div>
@@ -1229,7 +1246,7 @@ ${phead('상담 신청','진단이 번거로우시면<br>바로 통화하셔도 
       <div class="fi"><label>연락처</label><input type="tel" id="ct" placeholder="010-0000-0000" inputmode="numeric"></div>
       <div class="fi"><label>대략적인 채무 규모</label><select id="ca"><option>1천만 원 미만</option><option>1천만 ~ 3천만 원</option><option>3천만 ~ 1억 원</option><option>1억 원 이상</option></select></div>
       <div class="fi"><label>통화 가능한 시간</label><div class="chips" id="ch"><button type="button" class="on">지금 바로</button><button type="button">오전</button><button type="button">오후</button><button type="button">저녁</button></div></div>
-      <label class="agree"><input type="checkbox" id="cg"><span>개인정보 수집·이용에 동의합니다.</span></label>
+      <label class="agree"><input type="checkbox" id="cg"><span>개인정보 수집·이용 및 ${BIZ.firm} 제공에 동의합니다.</span></label>
       <button class="btn blk" type="submit">상담 신청하기</button>
     </form>
   </div>
@@ -1252,7 +1269,7 @@ ${phead('법적 고지',kind==='privacy'?'개인정보처리방침':'이용약�
   ${(kind==='privacy'
     ? ['수집하는 개인정보 항목','수집 및 이용 목적','보유 및 이용 기간','제3자 제공','이용자의 권리','개인정보보호책임자']
     : ['목적','용어의 정의','서비스의 제공','이용자의 의무','책임의 제한','준거법 및 관할'])
-    .map((h,i)=>`<div class="rv"><h2 class="d3">제${i+1}조 (${h})</h2><p class="bd">${BIZ.firm}은 진단 결과 안내 및 법률상담 연결을 위해 이름과 연락처를 수집합니다. 수집한 정보는 상담 목적 외로 이용하지 않으며, 목적 달성 후 관계 법령이 정한 기간에 따라 파기합니다.</p></div>`).join('')}
+    .map((h,i)=>`<div class="rv"><h2 class="d3">제${i+1}조 (${h})</h2><p class="bd">${OP.name}(빚탈길)는 진단 결과 안내 및 법률상담 연결을 위해 이름과 연락처를 수집합니다. 상담 진행에 동의한 경우에 한해 ${BIZ.firm}에 제공하며, 수집한 정보는 그 목적 외로 이용하지 않고 목적 달성 후 관계 법령이 정한 기간에 따라 파기합니다.</p></div>`).join('')}
 </div></section>
 ${foot()}`;
 
