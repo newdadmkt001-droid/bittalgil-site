@@ -227,7 +227,9 @@
 
   /* 변호사 */
   .lw{display:flex;align-items:center;gap:var(--s6);flex-wrap:wrap}
-  .lw .ph{width:80px;height:80px;border-radius:50%;flex:none;background:var(--surf2);border:1px solid var(--hair);display:flex;align-items:center;justify-content:center;font-size:var(--fs-d3);font-weight:700;color:var(--t3)}
+  .lw .ph{width:80px;height:80px;border-radius:50%;flex:none;background:var(--surf2);border:1px solid var(--hair);display:flex;align-items:center;justify-content:center;font-size:var(--fs-d3);font-weight:700;color:var(--t3);overflow:hidden}
+  /* 실사 변호사 사진. 원본 배경(법무법인 현암 백드롭)은 지우고 지면색 위에 다시 앉혔다 */
+  .lw .ph img{width:100%;height:100%;object-fit:cover;display:block}
   .lw .tx{display:flex;flex-direction:column;gap:var(--s1)}
 
   /* FAQ */
@@ -677,6 +679,99 @@ const OP={name:'비즈니스루프',ceo:'김소희',biz:'306-14-66080',
 const BIZ={firm:'법무법인 현암',lawyer:'정창희',ceo:'이상곤',biz:'156-85-02574',
   addr:'서울특별시 서초구 서초중앙로22길 97, 5층',tel:'1668-5831',email:'hyeonam@lawfirm.co.kr'};
 
+/* ══════════════ 법적 고지 문안 ══════════════
+   수집 주체는 운영사(비즈니스루프)이고 법률사무는 현암이 수행한다.
+   그래서 "제3자 제공" 이 이 서비스의 핵심 조항이다 — 상담을 진행하려면
+   반드시 현암에 넘겨야 하고, 그건 위탁이 아니라 제공이다.
+
+   조문의 수집 항목은 실제 코드(TRACK + 폼 payload)와 1:1 로 맞춰야 한다.
+   항목을 추가하면 여기도 같이 고칠 것.
+   ※ 변호사 최종 검토 전 초안이다.
+   ══════════════════════════════════════════ */
+const LEGAL={
+effective:'2026년 8월 26일',
+privacy:[
+['수집하는 개인정보 항목',`<p class="bd">회사는 서비스 제공을 위해 아래 항목을 수집합니다.</p>
+  <div class="rows">
+  <div class="row"><span class="cap">직접 입력</span><span class="bd" style="margin-left:auto;text-align:right">이름, 연락처(휴대전화번호),<br>통화 희망 시간, 대략적인 채무 규모</span></div>
+  <div class="row"><span class="cap">진단 중 생성</span><span class="bd" style="margin-left:auto;text-align:right">진단 문항 응답,<br>산출된 예상 변제금·감액률 등 계산 결과</span></div>
+  <div class="row"><span class="cap">자동 수집</span><span class="bd" style="margin-left:auto;text-align:right">접속 기기 구분, 브라우저 정보(User-Agent),<br>유입 경로(referrer·광고 파라미터),<br>세션 식별자, 접수 일시</span></div>
+  </div>
+  <p class="bd">주민등록번호·계좌번호·신용정보 등 민감정보는 이 사이트에서 수집하지 않습니다. 실제 사건 위임 단계에서 필요한 서류는 ${BIZ.firm}이 별도의 절차와 동의를 거쳐 받습니다.</p>`],
+
+['수집 및 이용 목적',`<p class="bd">수집한 정보는 다음 목적으로만 이용합니다.</p>
+  <p class="bd">① 진단 결과 안내 및 확인 연락<br>② 채무조정 관련 법률상담 연결<br>③ 문의 응대와 상담 이력 관리<br>④ 유입 경로별 서비스 개선 및 광고 효율 분석(개인을 식별하지 않는 통계 형태)</p>
+  <p class="bd">위 목적 외의 용도로 이용하지 않으며, 목적이 변경될 경우 사전에 동의를 받습니다.</p>`],
+
+['제3자 제공',`<p class="bd">이 서비스는 <b>${OP.name}</b>가 운영하고, 법률사무는 <b>${BIZ.firm}</b>이 수행합니다. 따라서 상담을 진행하려면 이용자의 정보를 현암에 제공해야 합니다.</p>
+  <div class="rows">
+  <div class="row"><span class="cap">제공받는 자</span><span class="bd" style="margin-left:auto">${BIZ.firm}</span></div>
+  <div class="row"><span class="cap">제공 목적</span><span class="bd" style="margin-left:auto">채무조정 법률상담 및 사건 상담</span></div>
+  <div class="row"><span class="cap">제공 항목</span><span class="bd" style="margin-left:auto;text-align:right">이름, 연락처, 통화 희망 시간,<br>진단 응답 및 결과</span></div>
+  <div class="row"><span class="cap">보유·이용 기간</span><span class="bd" style="margin-left:auto;text-align:right">제공 목적 달성 시까지<br>(사건 위임 시 관계 법령에 따름)</span></div>
+  </div>
+  <p class="bd">제공은 이용자가 접수 시 동의한 경우에 한합니다. <b>동의를 거부할 수 있으며</b>, 이 경우 상담 연결은 제공되지 않습니다. 다만 진단 결과 확인 자체에는 제한이 없습니다.</p>
+  <p class="bd">위 외의 제3자에게는 제공하지 않습니다. 다만 법령에 따라 수사기관 등이 적법한 절차로 요구하는 경우는 예외입니다.</p>`],
+
+['처리 위탁',`<p class="bd">서비스 운영에 필요한 범위에서 아래와 같이 처리를 위탁하고 있습니다.</p>
+  <div class="rows">
+  <div class="row"><span class="cap">Supabase Inc.</span><span class="bd" style="margin-left:auto;text-align:right">데이터 보관<br>(서버 소재지: 대한민국 서울)</span></div>
+  <div class="row"><span class="cap">Telegram FZ-LLC</span><span class="bd" style="margin-left:auto">신규 접수 알림 전달</span></div>
+  </div>
+  <p class="bd">수탁자가 변경되면 이 방침을 통해 알립니다.</p>`],
+
+['보유 및 이용 기간',`<p class="bd">수집일로부터 <b>3년</b>간 보관한 뒤 지체 없이 파기합니다. 다만 이용자가 그 전에 삭제를 요청하면 즉시 파기합니다.</p>
+  <p class="bd">상담이 실제 사건 위임으로 이어진 경우, 해당 사건 기록의 보관은 ${BIZ.firm}의 개인정보처리방침과 변호사법 등 관계 법령을 따릅니다.</p>`],
+
+['개인정보의 파기',`<p class="bd">보유 기간이 지나거나 처리 목적이 달성되면 지체 없이 파기합니다. 전자적 파일은 복구할 수 없는 방법으로 영구 삭제하고, 출력물이 있는 경우 분쇄하거나 소각합니다.</p>`],
+
+['이용자의 권리와 행사 방법',`<p class="bd">이용자는 언제든지 본인의 개인정보에 대해 <b>열람·정정·삭제·처리정지</b>를 요구할 수 있고, 이미 한 동의를 <b>철회</b>할 수 있습니다.</p>
+  <p class="bd">아래 개인정보보호책임자에게 요청하시면 지체 없이 처리하고 결과를 알려드립니다. 법정대리인이나 위임받은 자를 통해서도 요청할 수 있습니다.</p>
+  <p class="bd">권리 행사로 인해 이용자에게 불이익이 발생하지 않습니다.</p>`],
+
+['안전성 확보 조치',`<p class="bd">회사는 다음의 조치를 취하고 있습니다.</p>
+  <p class="bd">① 사이트 전 구간 HTTPS 암호화 전송<br>② 접근 권한 최소화 — 저장된 정보는 지정된 담당자만 조회할 수 있으며, 웹페이지에서는 어떤 경우에도 조회되지 않도록 데이터베이스 단에서 차단하고 있습니다<br>③ 접속 기록 보관 및 정기 점검</p>`],
+
+['개인정보보호책임자',`<div class="rows">
+  <div class="row"><span class="cap">처리 주체</span><span class="bd" style="margin-left:auto">${OP.name}</span></div>
+  <div class="row"><span class="cap">책임자</span><span class="bd" style="margin-left:auto">${OP.ceo}</span></div>
+  <div class="row"><span class="cap">주소</span><span class="bd" style="margin-left:auto;text-align:right">${OP.addr}</span></div>
+  </div>
+  <p class="bd">개인정보 침해로 인한 상담·신고가 필요하면 개인정보침해신고센터(privacy.kisa.or.kr, 국번없이 118), 대검찰청 사이버수사과(1301), 경찰청 사이버수사국(182)에 문의할 수 있습니다.</p>`],
+
+['방침의 변경',`<p class="bd">법령이나 서비스 내용이 바뀌어 이 방침을 변경할 경우, 변경 사항을 시행 7일 전부터 이 페이지에 게시합니다. 다만 이용자 권리에 중대한 변경이 있는 경우에는 30일 전에 알립니다.</p>`],
+],
+
+terms:[
+['목적',`<p class="bd">이 약관은 <b>${OP.name}</b>(이하 "회사")가 제공하는 채무조정 진단·상담 연결 서비스 <b>빚탈길</b>(이하 "서비스")의 이용 조건과 절차, 회사와 이용자의 권리·의무를 정하는 것을 목적으로 합니다.</p>`],
+
+['용어의 정의',`<p class="bd"><b>서비스</b> — 이용자가 입력한 정보를 바탕으로 개인회생 등 채무조정 제도의 적용 가능성과 예상 변제금을 산출해 보여주고, 원하는 경우 법률상담으로 연결하는 것을 말합니다.</p>
+  <p class="bd"><b>진단 결과</b> — 이용자가 입력한 값과 공개된 기준(보건복지부 고시 기준 중위소득 등)에 따라 계산된 참고 수치를 말합니다.</p>
+  <p class="bd"><b>제휴 법무법인</b> — 실제 법률상담과 사건을 수행하는 ${BIZ.firm}을 말합니다.</p>`],
+
+['서비스의 내용과 주체',`<p class="bd">회사는 광고대행·경영컨설팅을 업으로 하는 사업자이며, <b>법률사무를 직접 수행하지 않습니다.</b> 회사가 제공하는 것은 진단 도구와 상담 연결까지입니다.</p>
+  <p class="bd">법률상담·서류 검토·법원 제출 등 법률사무는 전적으로 ${BIZ.firm}이 수행하며 그에 관한 책임도 같은 법인에 있습니다. 광고책임변호사는 ${BIZ.lawyer} 변호사입니다.</p>
+  <p class="bd">서비스 이용료는 무료이며, 진단이나 상담 연결의 대가를 이용자에게 청구하지 않습니다.</p>`],
+
+['진단 결과의 성격',`<p class="bd">진단 결과는 <b>참고용 추정치이며 법률 자문이 아닙니다.</b> 이용자가 입력한 값에만 근거하므로 실제 재산·채권자 구성·소득 증빙·과거 회생 이력 등에 따라 결과는 달라집니다.</p>
+  <p class="bd">회생·파산의 인가 여부와 실제 변제금은 <b>법원이 판단합니다.</b> 회사도 제휴 법무법인도 특정한 결과를 보장하지 않으며, 진단 결과만을 신뢰하여 내린 결정의 결과에 대해 회사는 책임지지 않습니다.</p>
+  <p class="bd">사례로 제시된 수치는 개별 사건의 결과이며 동일한 결과를 보장하지 않습니다.</p>`],
+
+['이용자의 의무',`<p class="bd">이용자는 진단과 상담 신청 시 <b>본인의 정보를 사실대로</b> 입력해야 합니다. 타인의 이름이나 연락처를 무단으로 입력해서는 안 됩니다.</p>
+  <p class="bd">자동화된 수단으로 서비스에 반복 접근하거나 정상적인 운영을 방해하는 행위를 해서는 안 됩니다.</p>`],
+
+['책임의 제한',`<p class="bd">회사는 천재지변, 통신망 장애, 제3자 서비스(호스팅·데이터베이스 등)의 장애 등 회사의 합리적 지배를 벗어난 사유로 서비스가 중단된 경우 책임을 지지 않습니다.</p>
+  <p class="bd">회사는 이용자와 제휴 법무법인 사이에 성립하는 위임 관계의 당사자가 아니며, 그 관계에서 발생하는 분쟁에 대해 책임을 지지 않습니다.</p>
+  <p class="bd">다만 회사의 고의 또는 중대한 과실로 이용자에게 손해가 발생한 경우에는 그러하지 않습니다.</p>`],
+
+['서비스의 변경·중단',`<p class="bd">회사는 서비스의 내용을 변경하거나 제공을 중단할 수 있습니다. 이 경우 사전에 이 사이트에 공지하며, 부득이한 사유로 사전 공지가 어려운 경우 사후에 알립니다.</p>`],
+
+['약관의 변경',`<p class="bd">회사는 관계 법령을 위반하지 않는 범위에서 이 약관을 변경할 수 있습니다. 변경 시 시행 7일 전부터 이 페이지에 게시하며, 이용자에게 불리한 변경은 30일 전에 게시합니다.</p>`],
+
+['준거법 및 관할',`<p class="bd">이 약관은 대한민국 법에 따라 해석됩니다. 서비스 이용과 관련한 분쟁은 민사소송법이 정한 관할 법원에 제기합니다.</p>`],
+],
+};
+
 const COND=[{n:'소득 요건',s:'1인 최저생계비 이상',p:1},{n:'채무 요건',s:'1천만 ~ 15억 원',p:1},
   {n:'재산 대비 채무',s:'청산가치 판정',p:0},{n:'감액 가능성',s:'회생 실익 판정',p:0}];
 
@@ -989,7 +1084,7 @@ R.home=()=>`
 <section class="sec g-lift"><div class="wrap">
   <div class="panel rv"><div class="body" style="max-width:none">
     <h2 class="d2">상담은 변호사가<br>직접 합니다</h2>
-    <div class="lw"><div class="ph">정</div><div class="tx">
+    <div class="lw"><div class="ph"><img src="img/lawyer.webp" alt="정창희 변호사" width="80" height="80" loading="lazy" decoding="async"></div><div class="tx">
       <div class="d3">${BIZ.lawyer} 변호사</div><div class="cap">${BIZ.firm} · 광고책임변호사</div></div></div>
     <div class="vf">
       <div class="vfrow"><span class="lb">소속</span><span class="vl">${BIZ.firm}</span><span class="ck">등록 법인</span></div>
@@ -1207,9 +1302,8 @@ R.about=()=>`
 ${phead('소개','가장 어려운 건<br>첫 걸음입니다')}
 <section class="sec"><div class="wrap stack">
   <p class="bd rv">채무 문제로 검색을 시작한 사람들은 대부분 이미 오래 혼자 버텨온 뒤입니다. 빚탈길은 그 첫 걸음을 가볍게 만들기 위해 만들어졌습니다.</p>
-  <div class="card rv"><div class="lw"><div class="ph">정</div><div class="tx">
-    <div class="d3">${BIZ.lawyer} 변호사</div><div class="cap">${BIZ.firm} · 광고책임변호사</div></div></div>
-    <span class="todo">실사진 대기</span></div>
+  <div class="card rv"><div class="lw"><div class="ph"><img src="img/lawyer.webp" alt="정창희 변호사" width="80" height="80" loading="lazy" decoding="async"></div><div class="tx">
+    <div class="d3">${BIZ.lawyer} 변호사</div><div class="cap">${BIZ.firm} · 광고책임변호사</div></div></div></div>
   <h2 class="d3 rv">운영사 정보</h2>
   <div class="rows rv">
     <div class="row"><span class="cap">상호</span><span class="bd" style="margin-left:auto">${OP.name}</span></div>
@@ -1268,11 +1362,9 @@ ${foot()}`;
 R.legal=(kind)=>`
 ${phead('법적 고지',kind==='privacy'?'개인정보처리방침':'이용약관')}
 <section class="sec"><div class="read stack sm">
-  <span class="todo rv">법무 검토 후 정식 문안 교체 예정</span>
-  ${(kind==='privacy'
-    ? ['수집하는 개인정보 항목','수집 및 이용 목적','보유 및 이용 기간','제3자 제공','이용자의 권리','개인정보보호책임자']
-    : ['목적','용어의 정의','서비스의 제공','이용자의 의무','책임의 제한','준거법 및 관할'])
-    .map((h,i)=>`<div class="rv"><h2 class="d3">제${i+1}조 (${h})</h2><p class="bd">${OP.name}(빚탈길)는 진단 결과 안내 및 법률상담 연결을 위해 이름과 연락처를 수집합니다. 상담 진행에 동의한 경우에 한해 ${BIZ.firm}에 제공하며, 수집한 정보는 그 목적 외로 이용하지 않고 목적 달성 후 관계 법령이 정한 기간에 따라 파기합니다.</p></div>`).join('')}
+  ${(kind==='privacy'?LEGAL.privacy:LEGAL.terms)
+    .map((a,i)=>`<div class="rv"><h2 class="d3">제${i+1}조 (${a[0]})</h2>${a[1]}</div>`).join('')}
+  <p class="fine rv">시행일: ${LEGAL.effective}</p>
 </div></section>
 ${foot()}`;
 
