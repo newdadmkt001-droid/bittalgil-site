@@ -26,21 +26,23 @@
      색은 전부 대비를 재서 통과한 값이다(흰 지면 / 스테이지 #F2F4F6 양쪽).
      ══════════════════════════════════════════════════════════════ */
   :root{
-    /* 지면은 순백이 아니다. 웜을 고른 건 쿨 오프화이트가 파랑과 같은 색상환이라
-       지면이 브랜드를 흐리기 때문이다. 웜은 반대편이라 파랑 1점이 더 튄다 */
-    --bg:#FAF9F7; --stage:#F1EFEC; --card:#FFFFFF;
-    --rule:rgba(25,31,40,.055); --rule2:rgba(25,31,40,.026); --dash:#D6D3CE;
+    /* 토스 베이스 — 순백 지면 + 쿨 그레이 무대. 웜 오프화이트는 되돌렸다.
+       지면 텍스처는 두지 않는다(토스 10개 페이지 전부 0종). 밀도는 색이 아니라
+       컴포넌트가 만든다 */
+    --bg:#FFFFFF; --stage:#F2F4F6; --card:#FFFFFF;
+    --dash:#D1D6DB;   /* 미확정·예시 파선. 쿨 그레이 */
     --t1:#191F28;      /* 제목 16.56:1 */
     --t2:#333D4B;      /* 본문 11.00:1 */
     --t3:#646B74;      /* 보조·법정고지 5.39 / 4.89:1 */
     --t4:#8B95A1;      /* 장식·비활성 3.04:1 — 텍스트에 쓰지 않는다 */
     --line:rgba(0,0,0,.07); --line2:rgba(0,0,0,.13);
-    /* 파랑은 선·노드·숫자 전용. 면으로 칠하면 흰 글자가 3.71:1 로 AA 미달 */
-    --brand:#3182F6;
-    --brand-face:#0B4FA8; /* 면이 필요할 때만. 같은 색상환에서 명도만 내렸다 */
-    /* 파랑이 '진행 중'과 '결과'를 겸하고 있었다. 의미로 가른다 —
-       파랑 = 앞으로 낼 돈 / 오렌지 = 안 갚아도 되는 돈. 등장은 정확히 3자리 */
-    --cut-ink:#C2410C; --cut:#FF6B2C; --slab:#14181D;
+    --brand:#3182F6;      /* 면·바·강조. 작은 글자에 쓰지 않는다(3.71:1) */
+    --brand-ink:#286BCA;  /* 본문 링크·작은 글자 5.19:1 */
+    /* 흰 글자를 얹는 유일한 파랑. #3182F6 면은 흰 글자가 3.71:1 로 AA 미달이다 */
+    --brand-face:#0B4FA8;
+    /* 오렌지 폐기 — 액센트 2색은 파랑 하나짜리 식별자를 흐린다.
+       '안 갚아도 되는 돈'은 색이 아니라 자리와 크기로 구분한다 */
+    --cut-ink:var(--brand-ink); --cut:var(--brand);
     --brand-ink:#286BCA;  /* 본문 링크·작은 글자 5.19:1 */
     --ok:#15803D; --warn:#B91C1C;
 
@@ -52,7 +54,7 @@
     --s7:28px;--s8:32px;--s9:44px;--s10:56px;--s11:64px;--s12:80px;
     --pad:20px; --sec:48px; --gapblock:64px;
 
-    --r-sm:2px; --r:4px; --r-lg:6px; --r-xl:8px; --r-pill:4px;
+    --r-sm:6px; --r:16px; --r-lg:22px; --r-xl:28px; --r-pill:999px;
 
     --t-fast:.15s; --t-press:.2s; --t-slow:.3s; --t-in:.5s; --t-draw:1.1s;
     --e-in:cubic-bezier(.25,.46,.45,.94); --e-st:cubic-bezier(.4,0,.2,1);
@@ -70,17 +72,7 @@
   body{background:var(--bg);color:var(--t2);
     font-family:'Pretendard Variable',Pretendard,-apple-system,'Noto Sans KR','Malgun Gothic',sans-serif;
     font-size:var(--fs-b);font-weight:500;line-height:var(--lh5);word-break:keep-all;overflow-x:hidden;
-    -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;position:relative}
-  /* 도면 그리드 - 지면 텍스처는 1종만. 이 위에 놓이는 건 장식 도형이 아니라
-     실제 엔진 상수·계산 중간값이어야 한다. 빈 카드 하나면 AI SaaS 템플릿이 된다 */
-  body::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
-    background-image:
-      linear-gradient(var(--rule) 1px,transparent 1px),
-      linear-gradient(90deg,var(--rule) 1px,transparent 1px),
-      linear-gradient(var(--rule2) 1px,transparent 1px),
-      linear-gradient(90deg,var(--rule2) 1px,transparent 1px);
-    background-size:64px 64px,64px 64px,16px 16px,16px 16px}
-  #main,.nav,.fbar,.drawer{position:relative;z-index:1}
+    -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
   svg{display:block}
   button,input,select,textarea{font-family:inherit;font-size:inherit;font-weight:inherit;line-height:inherit;color:inherit}
   img{max-width:100%}
@@ -106,46 +98,28 @@
 
   /* ══ 지면 리듬 — 톤 변화는 정확히 2회. 셋 이상은 리듬이 아니라 얼룩이다 ══ */
 
-  /* 1회차: 다크 슬래브. 밝기만 바뀌고 재질(도면 그리드)은 그대로라
-     페이지가 두 조각이 아니라 하나의 물건으로 읽힌다 */
-  .slab{background:var(--slab);color:#fff;padding:var(--s9) 0 var(--s9);margin-top:var(--sec);
-    position:relative;overflow:hidden}
-  .slab::before{content:"";position:absolute;inset:0;pointer-events:none;
-    background-image:
-      linear-gradient(rgba(255,255,255,.075) 1px,transparent 1px),
-      linear-gradient(90deg,rgba(255,255,255,.075) 1px,transparent 1px),
-      linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
-      linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
-    background-size:64px 64px,64px 64px,16px 16px,16px 16px}
-  .slab > *{position:relative}
-  .slab .d2,.slab h2,.slab h3{color:#fff}
-  .slab .cap,.slab .legal{color:#98A1AC}
-  .slab .kick{color:#7FB3FF}
-  .slab .case{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.09)}
-  .slab .case .ty{color:#D7DCE2}
-  .slab .case .why{color:#98A1AC}
-  /* 오렌지 2자리째 — 다크 위에서 #FF6B2C 는 5.82:1 로 AA 통과 */
-  .slab .case .cut{color:var(--cut)}
-  .slab .lk{border-color:rgba(255,255,255,.55);color:#fff}
-  .slab .lk i{background:#fff;color:var(--slab)}
-  .slab .lk:active{background:#fff;color:var(--slab)}
+  /* 다크 슬래브 폐기 — 토스는 흰 지면 위 회색 무대 하나로 리듬을 만든다.
+     사례 섹션은 같은 문법의 옅은 밴드로 되돌렸다 */
+  .slab{background:var(--stage);padding:var(--s9) 0;margin-top:var(--sec);border-radius:var(--r-xl);
+    max-width:calc(var(--w-page) - var(--pad) * 2);margin-left:auto;margin-right:auto}
+  .slab .case{background:var(--card)}
+  .slab .lk{background:var(--card)}
+  .slab .lk:active{background:#E6EAEE}
 
   /* KPI 4열 — 카드 없음. 룰 2줄과 숫자만. 지어낸 수치는 한 칸도 넣지 않는다 */
   .kpi{display:grid;grid-template-columns:repeat(2,1fr);
-    border-top:1.4px solid rgba(255,255,255,.28);margin-top:var(--s5)}
+    border-top:1.4px solid var(--t1);margin-top:var(--s5)}
   @media (min-width:640px){.kpi{grid-template-columns:repeat(4,1fr)}}
-  .kpi div{padding:var(--s4) var(--s3) var(--s4) 0;border-bottom:1px solid rgba(255,255,255,.12)}
-  .kpi b{display:block;font-size:30px;font-weight:800;color:#fff;letter-spacing:-.04em;
+  .kpi div{padding:var(--s4) var(--s3) var(--s4) 0;border-bottom:1px solid var(--line2)}
+  .kpi b{display:block;font-size:30px;font-weight:800;color:var(--t1);letter-spacing:-.04em;
     line-height:1.05;font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1}
-  .kpi span{display:block;margin-top:6px;font-size:var(--fs-s);font-weight:600;color:#98A1AC}
+  .kpi span{display:block;margin-top:6px;font-size:var(--fs-s);font-weight:600;color:var(--t3)}
 
-  /* 2회차: 딥블루 마감 밴드. 흰 글자 on #3182F6 은 3.71:1 로 AA 미달이라
-     면에는 반드시 #0B4FA8 만 쓴다 */
-  .close{background:var(--brand-face);color:#fff;margin-top:var(--sec);
+  /* 마감 밴드도 라이트로. 카드가 밴드를 뚫고 내려오는 구조는 유지한다 */
+  .close{background:var(--stage);margin-top:var(--sec);border-radius:var(--r-xl);
+    max-width:calc(var(--w-page) - var(--pad) * 2);margin-left:auto;margin-right:auto;
     padding:var(--s9) 0 calc(var(--s9) + 72px);position:relative}
-  .close .d2{color:#fff}
-  .close .bd{color:#C3D8F5}
-  .close .btn{background:#fff;color:var(--brand-face)}
+  .close .bd{color:var(--t3)}
   /* 카드 하나가 밴드 하단 경계를 72px 뚫고 내려간다. 3D 도 사진도 없이 깊이가 생긴다 */
   .close .punch{position:absolute;left:0;right:0;bottom:-72px;padding:0 var(--pad)}
   .close .punch .in{max-width:var(--w-tab);margin:0 auto;background:var(--card);
@@ -165,13 +139,9 @@
   .steps svg{width:100%;height:auto}
   .steps .sax{stroke:var(--line2);stroke-width:1}
   .steps .sbar{fill:var(--brand)}
-  .steps .scut{fill:none;stroke:var(--cut-ink);stroke-width:1.4;stroke-dasharray:4 4}
+  .steps .scut{fill:none;stroke:var(--t4);stroke-width:1.4;stroke-dasharray:4 4}
   .steps .sl{font-size:11px;font-weight:700;fill:var(--t3)}
-  .steps .slc{font-size:12px;font-weight:800;fill:var(--cut-ink)}
-  .slab .steps .sax{stroke:rgba(255,255,255,.2)}
-  .slab .steps .sl{fill:#98A1AC}
-  .slab .steps .scut{stroke:var(--cut)}
-  .slab .steps .slc{fill:var(--cut)}
+  .steps .slc{font-size:12px;font-weight:800;fill:var(--t2)}
 
   /* 36회차 스트립 (S축척) — 같은 36을 결과 화면에서 한 줄로 되짚는다 */
   .strip{margin-top:var(--s4);display:grid;grid-template-columns:repeat(18,1fr);gap:3px}
@@ -205,21 +175,20 @@
   .fine{margin-top:var(--s3);font-size:var(--fs-m);font-weight:600;color:var(--t3);text-align:center}
 
   /* ── C3 PILL — 알약 + 검은 원형 화살표 ── */
-  /* 알약 폐기. 90° 모티프와 999px 알약은 같은 화면에 못 선다 */
+  /* 알약 + 검은 원형 화살표. 토스 실측 지배 부품이라 되돌렸다 */
   .lk{display:inline-flex;align-items:center;gap:var(--s3);min-height:48px;
-    padding:var(--s2) var(--s2) var(--s2) 16px;border:1px solid var(--t1);border-radius:var(--r-sm);
-    background:transparent;font-size:var(--fs-b);font-weight:700;color:var(--t1);text-decoration:none;
-    transition:background var(--t-fast) var(--e-st),color var(--t-fast) var(--e-st)}
-  .lk:active{background:var(--t1);color:#fff}
-  .lk i{font-style:normal;width:22px;height:22px;flex:none;background:var(--t1);
+    padding:var(--s2) var(--s2) var(--s2) 18px;border-radius:var(--r-pill);background:var(--stage);
+    font-size:var(--fs-b);font-weight:700;color:var(--t1);text-decoration:none;
+    transition:background var(--t-fast) var(--e-st)}
+  .lk:active{background:#E6EAEE}
+  .lk i{font-style:normal;width:34px;height:34px;border-radius:50%;flex:none;background:var(--t1);
     color:#fff;display:flex;align-items:center;justify-content:center}
-  .lk:active i{background:#fff;color:var(--t1)}
 
   /* ── C5 BADGE ── */
-  .bdg{display:inline-flex;align-items:center;gap:var(--s2);padding:7px 12px 7px 10px;
-    border-radius:var(--r-sm);background:var(--card);border:1px solid var(--line);
+  .bdg{display:inline-flex;align-items:center;gap:var(--s2);padding:7px 13px 7px 10px;
+    border-radius:var(--r-pill);background:var(--stage);border:1px solid var(--line);
     font-size:var(--fs-m);font-weight:700;color:var(--t2)}
-  .bdg i{width:6px;height:6px;background:var(--brand);flex:none}
+  .bdg i{width:6px;height:6px;border-radius:50%;background:var(--brand);flex:none}
 
   /* ── C9 TAG ── */
   .tag{font-size:var(--fs-m);font-weight:700;border-radius:var(--r-sm);padding:5px 10px;
@@ -243,7 +212,7 @@
   .nmenu a.on{color:var(--t1);font-weight:700}
   .nav .sp{flex:1}
   .nav .ncta{font-size:14px;font-weight:700;color:var(--t1);text-decoration:none;
-    border:1px solid var(--t1);border-radius:var(--r-sm);padding:9px 15px;min-height:40px;
+    border:1px solid var(--line2);border-radius:var(--r-pill);padding:9px 15px;min-height:40px;
     display:inline-flex;align-items:center}
   .burger{display:inline-flex;align-items:center;justify-content:center;
     min-height:44px;min-width:44px;margin-right:-10px;border:0;background:none;color:var(--t1);cursor:pointer}
@@ -258,24 +227,6 @@
     display:flex;align-items:center;justify-content:center}
   .drawer nav{display:flex;flex-direction:column;gap:var(--s1);margin-top:var(--s5)}
   .drawer nav a{padding:var(--s4) 0;font-size:20px;font-weight:700;color:var(--t1);text-decoration:none}
-
-  /* ══ L축척 - 전 페이지 관통 축. 스크롤 위치가 곧 절차 진행률이 된다 ══ */
-  .axis{position:fixed;left:10px;top:50%;transform:translateY(-50%);z-index:2;
-    width:14px;height:min(52vh,420px);pointer-events:none;display:none}
-  @media (min-width:480px){.axis{display:block}}
-  @media (min-width:1025px){.axis{left:26px}}
-  .axis .track{position:absolute;left:6px;top:0;bottom:0;width:1.4px;
-    background:repeating-linear-gradient(var(--dash) 0 4px,transparent 4px 8px)}
-  .axis .fill{position:absolute;left:6px;top:0;width:1.4px;height:0;background:var(--brand);
-    transition:height .18s linear}
-  .axis b{position:absolute;left:2px;width:9px;height:9px;background:var(--bg);
-    border:1.4px solid var(--dash);transform:translateY(-50%);
-    transition:background var(--t-slow) var(--e-st),border-color var(--t-slow) var(--e-st)}
-  .axis b.on{background:var(--brand);border-color:var(--brand)}
-  .axis b em{position:absolute;left:15px;top:50%;transform:translateY(-50%);
-    font-style:normal;font-size:10.5px;font-weight:700;color:var(--t3);white-space:nowrap;
-    opacity:0;transition:opacity var(--t-slow) var(--e-st)}
-  .axis b.on em{opacity:1}
 
   /* ══ 하단 고정 실행바 — 본문 CTA 가 화면을 벗어난 뒤에만 올라온다 ══ */
   .fbar{position:fixed;left:0;right:0;bottom:0;z-index:50;padding:var(--s3) var(--pad) 18px;
@@ -295,14 +246,10 @@
   /* 파스텔 4색 분류색 폐기 - 색이 4개면 그중 무엇도 브랜드가 아니다.
      스테이지는 같은 지면이고, 무엇에 관한 블록인지는 안에 든 화면이 말한다.
      대신 상단 1.4px 선이 블록 순번을 절차 진행률로 보여준다 */
-  /* 구분은 색이 아니라 축이 관통하는 x좌표다. 무대 4장이 '색이 다른 카드 4장'이
-     아니라 '같은 길의 다른 지점 4곳'이 된다. 파선=아직 안 지나온 구간 */
-  .stage::after{content:"";position:absolute;top:0;bottom:0;width:1.4px;left:var(--ax,52%);
-    background:repeating-linear-gradient(var(--dash) 0 4px,transparent 4px 8px)}
-  .stage.c1::after{--ax:14%} .stage.c2::after{--ax:52%}
-  .stage.c3::after{--ax:84%} .stage.c4::after{--ax:14%}
+  /* 무대는 같은 회색 하나다. 파스텔 4색 분류색은 되살리지 않는다 —
+     색이 4개면 그중 무엇도 브랜드가 아니다. 대신 옅은 단색 램프만 남긴다 */
   .stage.c1::before,.stage.c2::before,.stage.c3::before,.stage.c4::before{
-    background:linear-gradient(212deg,rgba(25,31,40,.035) 8%,rgba(25,31,40,0) 82%)}
+    background:linear-gradient(212deg,rgba(49,130,246,.10) 8%,rgba(49,130,246,0) 82%)}
   /* 제품 화면은 폰 실치수 400px 로 저작하고 통째로 축소한다.
      그래야 전역 타입 스케일에 12~15px 단이 생기지 않는다 */
   /* 실치수. 무대가 카드를 감싸고, 카드 안 글자는 전역 타입 스케일 그대로 읽힌다 */
@@ -337,7 +284,9 @@
   .hero{padding:var(--s7) var(--pad) 0;max-width:var(--w-page);margin:0 auto;width:100%}
   .hero .sub{margin-top:var(--s3);font-size:var(--fs-b);font-weight:500;color:var(--t3);line-height:var(--lh5)}
   .hero .d1{margin-top:var(--s4)}
-  .hdemo{margin-top:var(--s6);display:flex;flex-direction:column;gap:var(--s5)}
+  .hlead{display:flex;flex-direction:column;align-items:flex-start}
+  .hlead .hcta{align-self:stretch}
+  .hdemo{margin-top:var(--s6);display:flex;flex-direction:column;gap:var(--s4)}
   .q1card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
     padding:var(--s4) var(--s4) var(--s4);box-shadow:var(--lift-lg)}
   .q1h{display:flex;align-items:baseline;justify-content:space-between;
@@ -380,13 +329,14 @@
   @media (min-width:1025px){
     .hero{max-width:var(--w-page);padding:var(--s11) var(--pad) 0;
       display:grid;grid-template-columns:minmax(0,1fr) minmax(470px,1.02fr);
-      column-gap:64px;grid-template-rows:repeat(5,auto);align-content:center;min-height:600px}
-    .hero .bdg{grid-column:1;grid-row:1;justify-self:start;align-self:start;font-size:14px}
-    .hero .d1{grid-column:1;grid-row:2;margin-top:22px}
-    .hero .sub{grid-column:1;grid-row:3;margin-top:18px;font-size:var(--fs-b);max-width:26em}
-    .hero .hcta{grid-column:1;grid-row:4;margin:var(--s8) 0 0;max-width:320px}
-    .hero .hfine{grid-column:1;grid-row:5;margin-top:var(--s3);text-align:left}
-    .hdemo{grid-column:2;grid-row:1/span 5;align-self:center;margin-top:0;gap:var(--s5)}
+      column-gap:64px;align-items:center;min-height:560px}
+    .hero .hlead{grid-column:1}
+    .hero .bdg{font-size:14px}
+    .hero .d1{margin-top:22px}
+    .hero .sub{margin-top:18px;max-width:24em}
+    .hero .hcta{margin-top:var(--s7);max-width:320px}
+    .hero .hfine{margin-top:var(--s3);text-align:left}
+    .hdemo{grid-column:2;margin-top:0;gap:var(--s4)}
   }
 
   /* ══ 문법 B — 퍼널 ══ */
@@ -547,11 +497,12 @@
   .ladder .lv{grid-column:3;font-size:var(--fs-b);font-weight:800;color:var(--t1);
     font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1;white-space:nowrap}
   .ladder .rail{grid-column:1;width:1.4px;height:26px;justify-self:center;background:var(--t1)}
-  /* 오렌지 = 안 갚아도 되는 돈. 확정 소거. 페이지 전체에서 3자리만 쓴다 */
-  .ladder .ln.cutrow{border-color:var(--cut-ink);background:var(--cut-ink)}
-  .ladder .lv.cutrow{color:var(--cut-ink)}
-  .ladder .lk2.cutrow{color:var(--cut-ink);font-weight:700}
-  .ladder .rail.cut{background:var(--cut-ink)}
+  /* '안 갚아도 되는 돈'은 마지막 마디다. 색을 하나 더 들이지 않고
+     노드를 채우고 글자를 키워 구분한다 */
+  .ladder .ln.cutrow{border-color:var(--brand);background:var(--brand)}
+  .ladder .lv.cutrow{color:var(--brand-ink);font-size:19px}
+  .ladder .lk2.cutrow{color:var(--t1);font-weight:700}
+  .ladder .rail.cut{background:var(--brand)}
 
   /* ── 헤어라인 표 — 선이 정보를 나른다. 카드도 배경도 쓰지 않는다 ── */
   .htab{border-top:1.4px solid var(--t1);margin-top:var(--s4)}
@@ -624,15 +575,24 @@
   @media (min-width:640px){.grid{max-width:var(--w-tab)}}
   @media (min-width:1025px){.grid{max-width:1080px;display:grid;grid-template-columns:repeat(2,1fr);
     gap:var(--s4);align-content:start}.grid > .legal{grid-column:1/-1}}
-  .case{border-radius:var(--r-lg);background:var(--stage);padding:var(--s5)}
-  .case .top{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s3)}
-  .case .ty{font-size:var(--fs-m);font-weight:700;color:var(--t1)}
-  .case .cut{font-size:26px;font-weight:800;color:var(--brand-ink);letter-spacing:-.04em;line-height:var(--lh1);flex:none}
-  .case .cut.txt{font-size:var(--fs-b);font-weight:800}
+  /* 유형·설명이 왼쪽 한 단, 결과 숫자가 오른쪽 한 단. 숫자는 세로 가운데에 건다.
+     이전에는 baseline 정렬이라 긴 설명문이 아래로 흐르면서 좌우가 어긋났다 */
+  .case{border-radius:var(--r-lg);background:var(--stage);padding:var(--s5);
+    display:grid;grid-template-columns:minmax(0,1fr) 6.4em;column-gap:var(--s4);align-items:center}
+  @media (min-width:640px){.case{grid-template-columns:minmax(0,1fr) 7.2em}}
+  .case .top{display:contents}
+  .case .ty{grid-column:1;grid-row:1;font-size:var(--fs-m);font-weight:700;color:var(--t3)}
+  .case .why{grid-column:1;grid-row:2;margin-top:4px;font-size:var(--fs-b);font-weight:600;
+    color:var(--t1);line-height:1.45;letter-spacing:-.015em}
+  .case .cut{grid-column:2;grid-row:1/span 2;align-self:center;justify-self:stretch;
+    text-align:right;font-size:30px;font-weight:800;color:var(--brand-ink);letter-spacing:-.045em;
+    line-height:1.08;font-variant-numeric:tabular-nums}
+  .case .cut.txt{font-size:20px;line-height:1.28}
+  @media (min-width:640px){.case .cut{font-size:34px}.case .cut.txt{font-size:22px}}
   .case .nums{margin-top:var(--s3);display:flex;flex-wrap:wrap;gap:6px}
   .case .nums span{font-size:var(--fs-m);font-weight:700;color:var(--t2);background:var(--card);
     border-radius:var(--r-sm);padding:5px 10px}
-  .case .why{margin-top:10px;font-size:var(--fs-m);font-weight:500;color:var(--t3);line-height:var(--lh5)}
+
   .caselist{display:flex;flex-direction:column;gap:10px}
   @media (min-width:1025px){.caselist{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--s4)}}
   .post{border-radius:var(--r-lg);background:var(--stage);padding:var(--s5);
@@ -780,9 +740,6 @@
 </div>
 
 <main id="main"></main>
-<div class="axis" id="axis" aria-hidden="true"><div class="track"></div><div class="fill" id="axisFill"></div>
-  <b style="top:0%"><em>진단</em></b><b style="top:25%"><em>판정</em></b><b style="top:50%"><em>산정</em></b>
-  <b style="top:75%"><em>신청</em></b><b style="top:100%"><em>면책</em></b></div>
 <div class="fbar" id="fbar"><div class="in"><a class="btn blk" href="#/diagnosis">1분 진단 시작</a></div></div>
 <div class="anly" id="anly"><div><div class="bars"><i></i><i></i><i></i><i></i></div><h3 class="d3">판정 중</h3></div></div>
 
@@ -1102,10 +1059,10 @@ const DIFF=[['압도적 전문성','대한변호사협회 인증 도산 전문�
   ['변호사 직접상담','전문변호사의 정확한 상황진단',['신용정보조회 무료','신청서류 90% 신속발급대행','요청사항 정확히 반영']],
   ['합리적인 수임료','투명한 진행 비용',['법원 사건번호 대행','월 변제금을 낮추는 노하우','수임료 장기분납']]];
 
-const CASES=[['면책 결정','개인파산 · 고액채무','사업 실패로 누적된 대규모 채무를 면책 결정으로 정리했습니다.'],
-  ['80% 감액','개인회생 · 2번째 신청','면책 5년 이후 재신청을 통해 다시 한 번 채무 문제를 해결했습니다.'],
-  ['91% 감액','개인회생 · 코인투자 실패','코인 투자 손실 채무, 인가 결정으로 재기의 발판을 마련했습니다.'],
-  ['24개월 변제','청년회생 · 사회초년생','사회초년생 채무를 최단 변제기간으로 인가받았습니다.']];
+const CASES=[['면책 결정','개인파산 · 고액채무','사업 실패로 누적된 고액 채무를 정리'],
+  ['80% 감액','개인회생 · 2번째 신청','면책 5년 뒤 재신청으로 다시 해결'],
+  ['91% 감액','개인회생 · 코인투자 실패','코인 손실 채무를 인가 결정으로 정리'],
+  ['24개월 변제','청년회생 · 사회초년생','사회초년생 채무를 최단 기간 인가']];
 
 /* 바 = "줄어든 비율". unit 이 무엇이 줄었는지 말한다 */
 /* "100% 탕감"은 쓰지 않는다 — 조세·벌금·양육비 등 비면책채권은 파산해도 남는다.
@@ -1330,9 +1287,13 @@ const R={};
 /* ══ 1. 홈 ══ */
 R.home=()=>`
 <header class="hero">
-  <span class="bdg rv"><i></i>${BIZ.firm} · 실제 인가 사건 기준</span>
-  <h1 class="d1 rv">내 빚, 얼마까지<br>줄어드는지 먼저</h1>
-  <p class="sub rv">9문항이면 법원이 쓰는 산식으로 월 변제금이 나와요.</p>
+  <div class="hlead">
+    <span class="bdg rv"><i></i>${BIZ.firm} · 실제 인가 사건 기준</span>
+    <h1 class="d1 rv">내 빚, 얼마까지<br>줄어드는지 먼저</h1>
+    <p class="sub rv">9문항이면 법원이 쓰는 산식으로 월 변제금이 나와요.</p>
+    <a class="btn full hcta rv" href="#/diagnosis" data-h="medium">1분 진단 시작</a>
+    <p class="fine hfine rv">9문항 · 무료 · 결과는 연락처를 남기면 바로 열려요</p>
+  </div>
   <div class="hdemo rv">
     <div class="q1card" id="hq1">
       <div class="q1h"><b>변제금 진단</b><span>1 / 9</span></div>
@@ -1342,8 +1303,6 @@ R.home=()=>`
     </div>
     ${wiring()}
   </div>
-  <a class="btn full hcta" href="#/diagnosis" data-h="medium">1분 진단 시작</a>
-  <p class="fine hfine">9문항 · 무료 · 결과는 연락처를 남기면 바로 열립니다</p>
 </header>
 
 ${blk('c3',scrCond(),'되는지 안 되는지<br>먼저 봅니다','판정 기준 보기','#/solutions','판정 기준 보기')}
@@ -1357,7 +1316,7 @@ ${blk('c4',scrAlert(),'서초동에 오지 않아도<br>끝까지 진행됩니�
 
 <section class="slab"><div class="wrap stack">
   <div class="rv"><span class="kick">사례</span><h2 class="d2" style="margin-top:var(--s2)">이 산식으로 받은 결정</h2>
-  <p class="cap" style="margin-top:var(--s3)">${BIZ.firm} 수행 사건 · 사건마다 사정이 달라 같은 결과를 보장하지 않습니다</p></div>
+  <p class="cap" style="margin-top:var(--s3)">사건마다 사정이 달라 같은 결과를 보장하지 않습니다</p></div>
   <!-- 지어낸 수치는 한 칸도 없다. 전부 CASES 와 엔진 상수에서 나온 값이다 -->
   <div class="kpi rv">
     <div><b>91%</b><span>최고 감액률</span></div>
@@ -1381,9 +1340,7 @@ ${blk('c4',scrAlert(),'서초동에 오지 않아도<br>끝까지 진행됩니�
     <a class="n" href="tel:${BIZ.tel.replace(/[^0-9]/g,'')}">${BIZ.tel}</a>
   </div></div>
 </section>
-<div class="wrap" style="padding-top:calc(72px + var(--s6))">
-  <p class="legal">${OP.name}가 운영하며 법률사무는 ${BIZ.firm}이 수행합니다. 광고책임변호사 ${BIZ.lawyer}.</p>
-</div>
+<div style="height:calc(72px + var(--s6))"></div>
 ${foot()}`;
 
 /* ══ 2. 진단 인트로 ══ */
@@ -1409,7 +1366,6 @@ ${phead('무료 진단','9문항이면<br>내 변제금이 나옵니다','법원
 </div></section>
 <div class="wrap" style="margin-top:auto;padding-top:var(--s8);padding-bottom:var(--s8)">
   <a class="btn full" href="#/q" data-h="medium">진단 시작하기</a>
-  <p class="legal">${OP.name}가 운영하며 법률사무는 ${BIZ.firm}이 수행합니다. 광고책임변호사 ${BIZ.lawyer}.</p>
 </div></div>`;
 
 /* ══ 3. 문항 — 마크업은 런타임(step)이 그린다 ══ */
@@ -1463,8 +1419,7 @@ R.result=()=>{
       : `<h2>요건은 모두<br>확인됐습니다</h2>
          <p>실제 인가액은 채권자 구성과 법원 판단에 따라 달라집니다. ${BIZ.firm}이 통화로 확인해 드립니다.</p>`}</div>
     <a class="btn full rv" href="#/consult" style="margin-top:var(--s4)" data-h="medium">통화로 확인받기</a>
-    <p class="legal">${OP.name}가 운영하며 법률사무는 ${BIZ.firm}이 수행합니다. 광고책임변호사 ${BIZ.lawyer}.
-      진단 결과는 참고용이며 같은 결과를 보장하지 않습니다.</p>
+    <p class="legal">진단 결과는 참고용이며 사건마다 사정이 달라 같은 결과를 보장하지 않습니다.</p>
   </div>
   <div style="height:var(--s9)"></div></div>`;
 };
@@ -1545,7 +1500,7 @@ ${phead('성공사례','빚탈길 진단을 거쳐<br>결정된 사건입니다'
   ${CASES.map(c=>`<div class="case"><div class="top"><span class="ty">${c[1]}</span>
     <span class="cut ${/%/.test(c[0])?'num':'txt'}">${c[0]}</span></div>
     <p class="why">${c[2]}</p></div>`).join('')}
-  <p class="legal">출처: ${BIZ.firm} 수행 사건. 개인 식별이 가능한 정보는 제외했습니다.</p>
+  <p class="legal">${BIZ.firm} 수행 사건 기준. 개인 식별이 가능한 정보는 제외했습니다.</p>
 </div>
 <div class="wrap rv" style="padding-bottom:var(--s9)"><a class="btn full" href="#/diagnosis">1분 진단</a></div>
 ${foot()}`;
@@ -1813,10 +1768,10 @@ function renderGate(){
         <div class="fi"><input type="tel" name="phone" placeholder="연락처" inputmode="numeric" autocomplete="tel"></div>
       </div>
       <label class="agree"><input type="checkbox" name="agree">
-        <span><a href="#/privacy">개인정보 수집·이용</a>에 동의합니다. 수집 항목은 이름·연락처이며 상담 연결 목적에만 씁니다.</span></label>
+        <span>빚탈길이 이름·연락처를 받아 상담 연결에만 씁니다.
+          <a href="#/privacy">수집·이용 및 제3자 제공</a>에 동의합니다.</span></label>
       <button class="btn full" type="submit" style="margin-top:var(--s5)" data-h="medium">결과 확인하기</button>
-      <p class="legal">${OP.name}가 운영하며 법률사무는 ${BIZ.firm}이 수행합니다. 광고책임변호사 ${BIZ.lawyer}.</p>
-    </form>
+        </form>
   </div>`;
   const f=document.getElementById('gForm');
   f.onsubmit=e=>{e.preventDefault();
@@ -1827,7 +1782,7 @@ function renderGate(){
     else if(!a.checked){a.focus();ok=false;}
     if(!ok)return;
     try{sessionStorage.setItem('btg_ans',JSON.stringify(ans));}catch(_){}
-    submitLead(f,{name:n.value.trim(), phone:digits(t.value), form:'gate',
+    submitLead(f,{name:n.value.trim(), phone:digits(t.value), form:'result',
       answers:ans.slice(), calc:RESULT?RESULT.calc:null, eligible:RESULT?RESULT.isEligible:null}, '#/result');
   };
 }
@@ -1849,7 +1804,7 @@ async function submitLead(form, payload, next){
     HAP.success(); go(dest);
   }catch(e){
     btn.disabled=false; btn.textContent=label;
-    err.textContent='전송에 실패했습니다. 잠시 후 다시 시도하시거나 '+BIZ.tel+' 로 전화 주세요.';
+    err.textContent='전송에 실패했어요. 잠시 후 다시 시도하시거나 '+BIZ.tel+' 로 전화 주세요.';
     err.style.color='var(--warn)';
     console.error('lead submit failed:', e.message);
   }
@@ -1930,14 +1885,6 @@ document.getElementById('dx').onclick=()=>document.getElementById('drawer').clas
 document.getElementById('drawer').onclick=e=>{if(e.target.tagName==='A'||e.target.id==='drawer')document.getElementById('drawer').classList.remove('on');};
 window.addEventListener('scroll',()=>{
   document.getElementById('nav').classList.toggle('s',window.scrollY>8);
-  /* 축은 스크롤 진행률을 절차 진행률로 읽는다. 노드 5개는 실제 회생 절차 단계다 */
-  const ax=document.getElementById('axis');
-  if(ax&&ax.offsetParent){
-    const h=document.documentElement.scrollHeight-window.innerHeight;
-    const p=h>0?Math.min(1,window.scrollY/h):0;
-    document.getElementById('axisFill').style.height=(p*100)+'%';
-    ax.querySelectorAll('b').forEach((n,i)=>n.classList.toggle('on',p>=i/4-.02));
-  }
   const fb=document.getElementById('fbar');
   if(fb.style.display!=='none')fb.classList.toggle('show',window.scrollY>560);},{passive:true});
 window.addEventListener('hashchange',render);
