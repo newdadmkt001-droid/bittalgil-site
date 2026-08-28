@@ -155,6 +155,9 @@
       transition:opacity var(--t-in) var(--e-in),transform var(--t-in) var(--e-in)}
   .rv.d1t{--rv-d:16px}.rv.d2t{--rv-d:24px}.rv.d3t{--rv-d:40px}.rv.d4t{--rv-d:64px}
   .rv.shown{opacity:1;transform:none}
+  /* 첫 화면 전용 — 전환을 아예 끄고 즉시 보인다.
+     연출을 얻으려다 백지를 보여주는 것보다 낫다 */
+  .rv.instant{opacity:1;transform:none;transition:none}
   .seq > *{opacity:0;transform:translateY(16px)}
   .seq.nomo > *{opacity:1;transform:none;animation:none}
   .seq.go > *{animation:pop .7s var(--e-in) forwards}
@@ -2061,13 +2064,32 @@ function initFaq(){
 function bind(key){
   /* 리빌 — 발동선은 뷰포트 고정(threshold 는 요소 높이에 비례해 흔들린다).
      이동거리는 교차 직전에 실제 높이로 분류한다(bind 시점은 폰트 착지 전이라 오분류된다) */
+  const grade=h=>h<80?'d1t':h<200?'d2t':h<420?'d3t':'d4t';
+  /* instant = 전환 없이 바로. 첫 화면과 안전망은 이걸 쓴다 */
+  const show=el=>{ el.classList.add(grade(el.getBoundingClientRect().height),'instant','shown');
+                   io.unobserve(el); };
   const io=new IntersectionObserver(es=>es.forEach(e=>{
     if(!e.isIntersecting)return;
-    const h=e.boundingClientRect.height;
-    e.target.classList.add(h<80?'d1t':h<200?'d2t':h<420?'d3t':'d4t','shown');
+    e.target.classList.add(grade(e.boundingClientRect.height),'shown');
     io.unobserve(e.target);
   }),{threshold:0,rootMargin:'0px 0px -25% 0px'});
-  document.querySelectorAll('.rv').forEach(e=>io.observe(e));
+
+  /* 첫 화면에 이미 들어와 있는 것은 관찰자를 기다리지 않고 바로 켠다.
+     기다렸다가 콜백이 어긋나면 사용자는 백지를 본다 — 리빌 연출보다
+     '보이는 것'이 먼저다 */
+  document.querySelectorAll('.rv').forEach(e=>{
+    if(e.getBoundingClientRect().top < innerHeight*0.9) show(e);
+    else io.observe(e);
+  });
+
+  /* 안전망 — 폰트가 늦게 앉거나 이미지가 들어와 레이아웃이 밀려도
+     화면 안에 있는 것은 반드시 보이게 만든다 */
+  const sweep=()=>document.querySelectorAll('.rv:not(.shown)').forEach(e=>{
+    const r=e.getBoundingClientRect();
+    if(r.top<innerHeight&&r.bottom>0)show(e);
+  });
+  setTimeout(sweep,700); setTimeout(sweep,1800);
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(sweep);
 
   if(RM){document.querySelectorAll('[data-seq]').forEach(e=>e.classList.add('go','nomo'));}
   else{const so=new IntersectionObserver(es=>es.forEach(e=>{
