@@ -53,6 +53,9 @@
     --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:20px;--s6:24px;
     --s7:28px;--s8:32px;--s9:44px;--s10:56px;--s11:64px;--s12:80px;
     --pad:20px; --sec:48px; --gapblock:64px;
+    /* 하단 고정 실행바가 푸터를 덮지 않게 비워 두는 높이.
+       바는 폭이 넓을수록 두꺼워진다(390에서 146px, 1440에서 222px) */
+    --footpad:170px;
 
     --r-sm:6px; --r:16px; --r-lg:22px; --r-xl:28px; --r-pill:999px;
 
@@ -64,8 +67,8 @@
     --lift-lg:0 22px 48px rgba(19,32,60,.14);
     --w-page:1280px; --w-read:560px; --w-art:720px; --w-tab:620px;
   }
-  @media (min-width:640px){:root{--pad:32px;--sec:64px;--gapblock:88px}}
-  @media (min-width:1025px){:root{--pad:56px;--sec:96px;--gapblock:140px}}
+  @media (min-width:640px){:root{--pad:32px;--sec:64px;--gapblock:88px;--footpad:200px}}
+  @media (min-width:1025px){:root{--pad:56px;--sec:96px;--gapblock:140px;--footpad:250px}}
 
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;letter-spacing:var(--ls)}
   html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
@@ -758,7 +761,7 @@
 
   /* ══ 푸터 ══ */
   .foot nav a,.foot .cols a{padding:7px 0;display:inline-block}
-  .foot{margin-top:var(--gapblock);padding:var(--s7) var(--pad) 96px;border-top:1px solid var(--line);
+  .foot{margin-top:var(--gapblock);padding:var(--s7) var(--pad) var(--footpad);border-top:1px solid var(--line);
     max-width:var(--w-page);margin-left:auto;margin-right:auto;width:100%}
   .foot .cols{display:flex;flex-wrap:wrap;gap:var(--s8)}
   .foot h4{font-size:var(--fs-m);font-weight:700;color:var(--t1);margin-bottom:var(--s2)}
@@ -1725,7 +1728,7 @@ function initHeroDemo(){
   const wire=document.getElementById('hwire');
   const opts=[...card.querySelectorAll('.q1o')];
   const $=id=>document.getElementById(id);
-  let timers=[], live=true, running=false;
+  let timers=[], live=true, running=false, curQ=0;
   /* 카드가 문서에서 빠졌으면(=다른 화면으로 이동) 스스로 끝낸다.
      안 그러면 타이머가 사라진 노드를 만져 TypeError 가 난다 */
   const gone=()=>!card.isConnected;
@@ -1751,6 +1754,7 @@ function initHeroDemo(){
     g.querySelector('.wl').textContent=QS[qi].o[ansIdx][0]; };
 
   const showQ=(qi,picked)=>{
+    curQ=qi;
     $('hStep').textContent=(qi+1)+' / 9';
     $('hQz').innerHTML=QS[qi].q;
     opts.forEach((o,i)=>{ const t=QS[qi].o[i];
@@ -1779,14 +1783,20 @@ function initHeroDemo(){
       if(p<1)requestAnimationFrame(tick); })(t0);
   };
 
-  /* 사용자가 개입하면 데모는 끝난다. 누른 답이 1번 문항의 답이 된다 */
+  /* 누르면 진단으로 들어간다. 예전엔 재생만 멈추고 아무 데도 안 가서
+     사용자 눈에는 그냥 고장난 화면이었다.
+     1번 문항이 떠 있을 때 누른 것만 답으로 인계한다 — 5번 문항이 떠 있을 때
+     누른 걸 1번 답으로 저장하면 진단 결과가 통째로 틀어진다 */
   const takeOver=i=>{
+    if(!live)return;
     live=false; running=false; clear();
-    $('hHd').textContent='변제금 진단';
-    scene($('hQ'),$('hR'));
-    showQ(0,i);
-    resetWire(); fillWire(0,i);
-    try{sessionStorage.setItem('btg_q0',String(i));}catch(e){}
+    const q=curQ;
+    opts.forEach(o=>o.classList.remove('on'));
+    opts[i]&&opts[i].classList.add('on');
+    if(q===0){ fillWire(0,i);
+      try{sessionStorage.setItem('btg_q0',String(i));}catch(e){} }
+    /* 누른 게 화면에 남는 걸 보고 넘어간다 */
+    setTimeout(()=>go(q===0?'#/q':'#/diagnosis'),280);
   };
   opts.forEach((o,i)=>o.addEventListener('click',()=>takeOver(i)));
 
@@ -2109,6 +2119,8 @@ function bind(key){
        '히어로에서 본 화면이 클릭 후 그대로'가 깨지지 않는다 */
     const h=(()=>{try{return sessionStorage.getItem('btg_q0')}catch(e){return null}})();
     if(h!==null&&QS[0].o[+h]){ans[0]=+h;qi=1;}
+    /* 한 번 쓰고 버린다 — 남기면 '다시 진단하기'로 와도 1번을 계속 건너뛴다 */
+    try{sessionStorage.removeItem('btg_q0');}catch(e){}
     renderQ();
     document.getElementById('qBack').onclick=()=>{
       if(qi===0)go('#/diagnosis'); else {qi--;renderQ();}};
