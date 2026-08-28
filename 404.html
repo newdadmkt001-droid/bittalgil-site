@@ -1787,11 +1787,13 @@ function initHeroDemo(){
   };
   opts.forEach((o,i)=>o.addEventListener('click',()=>takeOver(i)));
 
-  /* 이미 히어로에서 고른 적이 있으면 그 상태로 멈춰 둔다 */
-  const pre=(()=>{try{return sessionStorage.getItem('btg_q0')}catch(e){return null}})();
-  if(pre!==null&&QS[0].o[+pre]){ live=false; showQ(0,+pre); resetWire(); fillWire(0,+pre); return; }
+  /* 예전에 고른 답이 있어도 재생은 계속한다 — 그 값은 퍼널로 넘기는 용도지
+     재생을 끄는 스위치가 아니다. 이걸로 껐더니 한 번 눌러 본 사람은
+     그 세션 내내 정지 화면만 봤다 */
 
-  if(RM){ showQ(0,null); finish(false); return; }
+  /* 동작 줄이기에서는 전환·카운트업을 끄고 간격만 늘린다.
+     움직임은 없애되 화면이 죽어 있지는 않게 한다 */
+  const STEP=RM?1500:880, LEAD=RM?300:520, HOLD=RM?6000:5200;
 
   function run(){
     if(!live)return;
@@ -1800,16 +1802,16 @@ function initHeroDemo(){
     $('hAmt').textContent='0';
     scene($('hQ'),$('hR'));
     resetWire();
-    if(wire){wire.classList.add('draw');
+    if(!RM&&wire){wire.classList.add('draw');
       at(1000,()=>{wire.classList.remove('draw');wire.classList.add('drawn');});}
-    let t=520;
+    let t=LEAD;
     HERO_ANS.forEach((pick,qi)=>{
       at(t,()=>showQ(qi,null));            /* 문항이 뜬다 */
-      at(t+430,()=>{opts[pick]&&opts[pick].classList.add('on'); fillWire(qi,pick);});
-      t+=880;                              /* 9문항 × 0.88초 ≈ 8초 */
+      at(t+Math.round(STEP*.49),()=>{opts[pick]&&opts[pick].classList.add('on'); fillWire(qi,pick);});
+      t+=STEP;
     });
-    at(t+120,()=>finish(true));
-    at(t+5200,run);                        /* 결과를 5.2초 보여주고 다시 */
+    at(t+120,()=>finish(!RM));
+    at(t+HOLD,run);                        /* 결과를 잠시 보여주고 다시 */
   }
 
   /* 히어로는 문서 맨 위라 교차 관찰이 필요 없다.
