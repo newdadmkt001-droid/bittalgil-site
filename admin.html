@@ -102,6 +102,15 @@ input.memo{width:100%;min-width:150px;height:32px;padding:0 10px;border:1px soli
   border-radius:var(--r-sm);font-size:13px}
 .empty{padding:48px 20px;text-align:center;color:var(--t3);font-weight:600}
 
+.kpi span em{font-style:normal;font-weight:800;color:var(--brand-ink)}
+.panel h3 .lg{margin-left:10px;font-size:12px;font-weight:700;color:var(--t3)}
+.panel h3 .lg::before{content:'';display:inline-block;width:9px;height:9px;border-radius:2px;
+  background:#3182F6;margin-right:4px;vertical-align:middle}
+.panel h3 .lg.g::before{background:#10B981}
+.panel h3 .lg.r::before{background:#E5484D}
+.jx{height:26px;padding:0 9px;border:1px solid var(--line2);border-radius:6px;
+  background:#fff;font-size:12px;font-weight:700;color:var(--t3);cursor:pointer}
+
 /* ── 여정 ── */
 .jcard{background:var(--card);border-radius:var(--r);padding:14px 18px}
 .jhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -181,6 +190,11 @@ function renderLogin(msg){
 
 /* ══ 셸 ══ */
 let TAB='stats', RANGE=7, LEADS=[], POSTS=[], EDIT=null, EVENTS=[], SPEND=[], JMODE='all';
+let FROM='', TO='', NOBOT=true;
+/* 내부 세션 제외 — 우리가 확인하려고 돌아다닌 흔적이 통계를 흐린다 */
+let EXCL=(()=>{try{return new Set(JSON.parse(localStorage.getItem('btg_excl')||'[]'))}catch(e){return new Set()}})();
+const saveExcl=()=>{try{localStorage.setItem('btg_excl',JSON.stringify([...EXCL]))}catch(e){}};
+const BOT=/bot|crawler|spider|crawling|headless|lighthouse|preview/i;
 
 function shell(inner){
   app.innerHTML=`<header class="top"><div class="in">
@@ -207,11 +221,66 @@ function shell(inner){
   sb.auth.getUser().then(({data})=>{const w=$('#who');if(w&&data.user)w.textContent=data.user.email;});
 }
 
+/* 날짜 도구줄 — 모든 탭이 같은 걸 쓴다 */
+function rangeBar(extra){
+  return `<div class="range">
+    ${[[1,'오늘'],[7,'7일'],[30,'30일'],[90,'90일'],[0,'전체']].map(([v,l])=>
+      `<button data-r="${v}" class="${!FROM&&RANGE===v?'on':''}">${l}</button>`).join('')}
+    <span style="flex:1"></span>
+    <input id="d_from" type="date" value="${FROM}" style="height:34px;border:1px solid var(--line2);border-radius:6px;padding:0 8px">
+    <input id="d_to" type="date" value="${TO}" style="height:34px;border:1px solid var(--line2);border-radius:6px;padding:0 8px">
+    <button id="d_go">기간 적용</button>
+    ${FROM?'<button id="d_clear">해제</button>':''}
+    <button id="botq" class="${NOBOT?'':'on'}">${NOBOT?'봇 제외':'봇 포함'}</button>
+    ${EXCL.size?`<button id="exclr">내부 제외 ${EXCL.size} 초기화</button>`:''}
+    ${extra||''}
+  </div>`;
+}
+
+/* ── 아주 작은 차트 두 개. 외부 스크립트를 안 쓰므로 SVG 로 직접 그린다 ── */
+function areaChart(series,keys,colors,h){
+  h=h||150; const W=760, P=26;
+  const n=series.length||1;
+  const max=Math.max(1,...series.flatMap(d=>keys.map(k=>d[k]||0)));
+  const x=i=>P+(W-P*2)*(n===1?0.5:i/(n-1));
+  const y=v=>h-20-(h-34)*(v/max);
+  const path=k=>series.map((d,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(d[k]||0).toFixed(1)).join(' ');
+  const fill=k=>path(k)+` L ${x(n-1).toFixed(1)} ${h-20} L ${x(0).toFixed(1)} ${h-20} Z`;
+  const step=Math.max(1,Math.ceil(n/7));
+  return `<svg viewBox="0 0 ${W} ${h}" style="width:100%;height:auto">
+    ${[0,.5,1].map(g=>`<line x1="${P}" x2="${W-P}" y1="${y(max*g).toFixed(1)}" y2="${y(max*g).toFixed(1)}"
+      stroke="#E9EDF1" stroke-width="1"/><text x="0" y="${(y(max*g)+4).toFixed(1)}" font-size="11" fill="#8B95A1">${Math.round(max*g)}</text>`).join('')}
+    ${keys.map((k,i)=>`<path d="${fill(k)}" fill="${colors[i]}" opacity=".12"/>
+      <path d="${path(k)}" fill="none" stroke="${colors[i]}" stroke-width="2.2" stroke-linejoin="round"/>`).join('')}
+    ${series.map((d,i)=>i%step?'':`<text x="${x(i).toFixed(1)}" y="${h-5}" font-size="11" fill="#8B95A1" text-anchor="middle">${d.label}</text>`).join('')}
+  </svg>`;
+}
+function barChart(vals,labels){
+  const W=760,h=130,P=26,n=vals.length,max=Math.max(1,...vals);
+  const bw=(W-P*2)/n*0.68;
+  return `<svg viewBox="0 0 ${W} ${h}" style="width:100%;height:auto">
+    ${vals.map((v,i)=>{const bx=P+(W-P*2)*(i/n)+((W-P*2)/n-bw)/2, bh=(h-30)*(v/max);
+      return `<rect x="${bx.toFixed(1)}" y="${(h-20-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}"
+        rx="3" fill="#3182F6" opacity="${v?0.85:0.15}"/>`}).join('')}
+    ${labels.map((l,i)=>i%3?'':`<text x="${(P+(W-P*2)*(i/n)+(W-P*2)/n/2).toFixed(1)}" y="${h-5}"
+      font-size="11" fill="#8B95A1" text-anchor="middle">${l}</text>`).join('')}
+  </svg>`;
+}
+
 /* ══ 세션 ══
    이벤트를 세션으로 접어 '어디까지 갔는가'를 만든다.
    신용톡톡 어드민의 퍼널·여정이 전부 이 위에 선다. */
-const evInRange=()=>{const d=new Date();d.setDate(d.getDate()-RANGE);
-  return EVENTS.filter(e=>RANGE===0||new Date(e.created_at)>=d);};
+/* 기간 — 커스텀이 있으면 그것이 우선한다 */
+function within(ts){
+  const t=new Date(ts);
+  if(FROM&&TO)return t>=new Date(FROM+'T00:00:00')&&t<=new Date(TO+'T23:59:59');
+  if(RANGE===0)return true;
+  const d=new Date(); d.setDate(d.getDate()-RANGE); return t>=d;
+}
+const evInRange=()=>EVENTS.filter(e=>within(e.created_at)
+  &&!EXCL.has(e.session_id)
+  &&!(NOBOT&&BOT.test(e.referrer||'')));
+const rangeLabel=()=>FROM&&TO?FROM+' ~ '+TO:RANGE===0?'전체':RANGE===1?'오늘':RANGE+'일';
 
 /* 퍼널 단계 — 뒤에 있을수록 깊이 들어간 것 */
 const STAGES=[
@@ -257,53 +326,112 @@ function sessions(){
 }
 
 /* ══ 집계 ══ */
-const inRange=r=>{const d=new Date();d.setDate(d.getDate()-RANGE);
-  return LEADS.filter(l=>RANGE===0||new Date(l.created_at)>=d);};
+const inRange=()=>LEADS.filter(l=>within(l.created_at));
 
 function statsHTML(){
+  const S=sessions();
   const rows=inRange();
   const n=rows.length;
-  const elig=rows.filter(r=>r.eligible).length;
-  const cuts=rows.map(r=>r.calc&&r.calc.reductionPercent).filter(v=>typeof v==='number');
-  const avgCut=cuts.length?Math.round(cuts.reduce((a,b)=>a+b,0)/cuts.length):0;
-  const pays=rows.map(r=>r.calc&&r.calc.monthlyPayment).filter(v=>typeof v==='number');
-  const avgPay=pays.length?Math.round(pays.reduce((a,b)=>a+b,0)/pays.length):0;
-  const group=(key,fallback)=>{
-    const m={};rows.forEach(r=>{const k=r[key]||fallback;m[k]=(m[k]||0)+1;});
-    return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,7);
-  };
-  const bars=(list)=>{const max=Math.max(1,...list.map(x=>x[1]));
-    return list.length?list.map(([k,v])=>`<div class="bar">
-      <div class="t"><i style="width:${(v/max*100).toFixed(1)}%"></i><em>${esc(k)}</em></div>
-      <span class="n">${v}</span></div>`).join('')
-      :'<p class="hint">데이터 없음</p>';};
-  const S=sessions();
-  const started=S.filter(x=>x.depth>=1).length;
-  const done=S.filter(x=>x.depth>=3).length;
-  const conv=S.length?(n/S.length*100):0;
+  const ev=evInRange();
+
+  /* 오늘 / 어제 — 전일 대비를 보여줘야 좋아졌는지 나빠졌는지 안다 */
+  const dayKey=t=>new Date(t).toLocaleDateString('sv-SE');
+  const today=new Date().toLocaleDateString('sv-SE');
+  const yest=new Date(Date.now()-864e5).toLocaleDateString('sv-SE');
+  const pv=EVENTS.filter(e=>e.event==='view'&&!EXCL.has(e.session_id));
+  const cnt=(arr,d,f)=>arr.filter(x=>dayKey(x.created_at)===d&&(!f||f(x))).length;
+  const uniq=(d)=>new Set(pv.filter(e=>dayKey(e.created_at)===d).map(e=>e.session_id)).size;
+  const tV=cnt(pv,today), yV=cnt(pv,yest);
+  const tS=uniq(today), yS=uniq(yest);
+  const tL=cnt(LEADS,today), yL=cnt(LEADS,yest);
+  const delta=(a,b)=>b===0?(a?'+'+a:'0'):((a-b>=0?'+':'')+(a-b));
+
+  /* 일별 추이 */
+  const days=[]; const span=FROM&&TO?Math.min(60,Math.round((new Date(TO)-new Date(FROM))/864e5)+1):(RANGE===0?30:Math.max(1,RANGE));
+  for(let k=span-1;k>=0;k--){
+    const d=new Date(Date.now()-k*864e5).toLocaleDateString('sv-SE');
+    days.push({label:d.slice(5).replace('-','/'),
+      visits:cnt(pv,d), sessions:uniq(d), leads:cnt(LEADS,d)});
+  }
+  /* 시간대 */
+  const hours=Array(24).fill(0);
+  ev.filter(e=>e.event==='view').forEach(e=>hours[new Date(e.created_at).getHours()]++);
+
+  const grp=(list,key,fb)=>{const m={};list.forEach(x=>{const k=(typeof key==='function'?key(x):x[key])||fb;m[k]=(m[k]||0)+1});
+    return Object.entries(m).sort((a,b)=>b[1]-a[1]);};
+  /* 유입 채널 — utm_source 가 없으면 referrer 도메인으로 대신한다 */
+  const chan=x=>x.utm||(x.ref?(()=>{try{return new URL(x.ref).hostname.replace(/^www\./,'')}catch(e){return '직접'}})():'직접');
+  const bySrc={}; S.forEach(x=>{const k=chan(x);(bySrc[k]=bySrc[k]||{v:0,l:0}).v++;});
+  rows.forEach(l=>{const k=l.utm_source||'직접';(bySrc[k]=bySrc[k]||{v:0,l:0}).l++;});
+
+  /* 칼럼별 기여 — 어떤 글이 진단으로 데려오는가 */
+  const art={};
+  ev.filter(e=>e.event==='view'&&/#\/columns\/[a-z0-9-]+/.test(e.path||'')).forEach(e=>{
+    const slug=(e.path.match(/#\/columns\/([a-z0-9-]+)/)||[])[1]; if(!slug)return;
+    (art[slug]=art[slug]||{v:0,sess:new Set()});
+    art[slug].v++; art[slug].sess.add(e.session_id);
+  });
+  const startedSess=new Set(ev.filter(e=>e.event==='q_enter').map(e=>e.session_id));
+  const submitSess=new Set(ev.filter(e=>e.event==='submit').map(e=>e.session_id));
+  const artRows=Object.entries(art).map(([slug,a])=>{
+    const p=POSTS.find(x=>x.slug===slug);
+    const started=[...a.sess].filter(x=>startedSess.has(x)).length;
+    const led=[...a.sess].filter(x=>submitSess.has(x)).length;
+    return {slug,title:p?p.title:slug,v:a.sess.size,started,led,
+      cvr:a.sess.size?(led/a.sess.size*100):0};
+  }).sort((a,b)=>b.led-a.led||b.v-a.v);
+
+  /* 실시간 — 최근 5분 */
+  const live=new Set(EVENTS.filter(e=>Date.now()-new Date(e.created_at)<3e5&&!EXCL.has(e.session_id))
+    .map(e=>e.session_id)).size;
+
+  const table=(head,list,fmt)=>list.length?`<div class="tblwrap"><table style="min-width:420px">
+    <thead><tr>${head.map(h=>`<th${h[1]?' class="num"':''}>${h[0]}</th>`).join('')}</tr></thead>
+    <tbody>${list.map(fmt).join('')}</tbody></table></div>`:'<p class="hint">데이터 없음</p>';
+
   return `
-  <div class="range">
-    ${[[1,'오늘'],[7,'7일'],[30,'30일'],[90,'90일'],[0,'전체']].map(([v,l])=>
-      `<button data-r="${v}" class="${RANGE===v?'on':''}">${l}</button>`).join('')}
-  </div>
+  ${rangeBar(`<span class="tag ${live?'y':'n'}" style="align-self:center">지금 ${live}명</span>`)}
   <div class="kpis">
-    <div class="kpi"><b>${S.length}</b><span>방문 세션</span></div>
-    <div class="kpi"><b>${started}</b><span>진단 시작</span></div>
-    <div class="kpi"><b>${done}</b><span>9문항 완주</span></div>
-    <div class="kpi"><b>${conv.toFixed(1)}<small style="font-size:.55em">%</small></b><span>방문 대비 리드</span></div>
+    <div class="kpi"><b>${tV}</b><span>오늘 방문 <em class="dl">${delta(tV,yV)}</em></span></div>
+    <div class="kpi"><b>${tS}</b><span>오늘 순방문자 <em class="dl">${delta(tS,yS)}</em></span></div>
+    <div class="kpi"><b>${tL}</b><span>오늘 리드 <em class="dl">${delta(tL,yL)}</em></span></div>
+    <div class="kpi"><b>${S.length?(n/S.length*100).toFixed(1):'0.0'}<small style="font-size:.55em">%</small></b><span>전환율 (${rangeLabel()})</span></div>
   </div>
   <div class="kpis" style="margin-top:10px">
+    <div class="kpi"><b>${S.length}</b><span>세션</span></div>
+    <div class="kpi"><b>${S.filter(x=>x.depth>=1).length}</b><span>진단 시작</span></div>
+    <div class="kpi"><b>${S.filter(x=>x.depth>=3).length}</b><span>9문항 완주</span></div>
     <div class="kpi"><b>${n}</b><span>리드</span></div>
-    <div class="kpi"><b>${n?Math.round(elig/n*100):0}<small style="font-size:.55em">%</small></b><span>회생 요건 충족</span></div>
-    <div class="kpi"><b>${avgCut}<small style="font-size:.55em">%</small></b><span>평균 감액률</span></div>
-    <div class="kpi"><b>${won(avgPay)}</b><span>평균 월 변제금</span></div>
   </div>
+
+  <div class="panel" style="margin-top:14px"><h3>일별 추이 <span class="lg">방문</span><span class="lg g">순방문자</span><span class="lg r">리드</span></h3>
+    ${areaChart(days,['visits','sessions','leads'],['#3182F6','#10B981','#E5484D'])}</div>
+
+  <div class="panel" style="margin-top:14px"><h3>시간대별 방문 (0~23시)</h3>
+    ${barChart(hours,hours.map((_,i)=>i+'시'))}</div>
+
   <div class="split">
-    <div class="panel"><h3>유입원 (utm_source)</h3>${bars(group('utm_source','직접·미표기'))}</div>
-    <div class="panel"><h3>기기</h3>${bars(group('device','미상'))}</div>
-    <div class="panel"><h3>캠페인 (utm_campaign)</h3>${bars(group('utm_campaign','없음'))}</div>
-    <div class="panel"><h3>처리 상태</h3>${bars(group('status','new'))}</div>
-  </div>`;
+    <div class="panel"><h3>유입 채널 + 전환율</h3>
+      ${table([['채널'],['세션',1],['리드',1],['전환율',1]],Object.entries(bySrc).sort((a,b)=>b[1].v-a[1].v),
+        ([k,v])=>`<tr><td><span class="nm">${esc(k)}</span></td><td class="num">${v.v}</td>
+          <td class="num">${v.l}</td><td class="num">${v.v?(v.l/v.v*100).toFixed(1)+'%':'-'}</td></tr>`)}</div>
+    <div class="panel"><h3>기기</h3>
+      ${table([['기기'],['세션',1]],grp(S,'device','미상'),
+        ([k,v])=>`<tr><td><span class="nm">${esc(k)}</span></td><td class="num">${v}</td></tr>`)}</div>
+    <div class="panel"><h3>캠페인</h3>
+      ${table([['캠페인'],['세션',1]],grp(S,'camp','없음'),
+        ([k,v])=>`<tr><td>${esc(k)}</td><td class="num">${v}</td></tr>`)}</div>
+    <div class="panel"><h3>리드 처리 상태</h3>
+      ${table([['상태'],['건수',1]],grp(rows,'status','new'),
+        ([k,v])=>`<tr><td>${esc((ST.find(s=>s[0]===k)||[,k])[1])}</td><td class="num">${v}</td></tr>`)}</div>
+  </div>
+
+  <div class="panel" style="margin-top:14px"><h3>칼럼별 기여 — 어떤 글이 진단으로 데려오나</h3>
+    ${artRows.length?table([['글'],['읽은 세션',1],['진단 시작',1],['리드',1],['전환율',1]],artRows,
+      a=>`<tr><td><a href="https://bittalgil.com/#/columns/${esc(a.slug)}" target="_blank">${esc(a.title)}</a></td>
+        <td class="num">${a.v}</td><td class="num">${a.started}</td>
+        <td class="num"><b>${a.led}</b></td><td class="num">${a.cvr.toFixed(1)}%</td></tr>`)
+      :'<p class="hint">아직 칼럼 경유 데이터가 없습니다. 글을 읽고 진단으로 넘어간 세션이 쌓이면 표시됩니다.</p>'}</div>`;
 }
 
 /* ══ 퍼널 ══ */
@@ -322,10 +450,7 @@ function funnelHTML(){
   }
   const maxLeave=Math.max(1,...qDrop.map(d=>d.leave));
   return `
-  <div class="range">
-    ${[[1,'오늘'],[7,'7일'],[30,'30일'],[90,'90일'],[0,'전체']].map(([v,l])=>
-      `<button data-r="${v}" class="${RANGE===v?'on':''}">${l}</button>`).join('')}
-  </div>
+  ${rangeBar()}
   <div class="panel" style="margin-top:14px"><h3>단계별 도달 · 이탈</h3>
     ${rows.map((r,i)=>{
       const prev=i?rows[i-1].count:r.count;
@@ -360,10 +485,7 @@ function journeyHTML(){
     x.depth===0);
   const chips=[['all','전체'],['lead','제출까지'],['drop','진단 중 이탈'],['bounce','진입만']];
   return `
-  <div class="range">
-    ${[[1,'오늘'],[7,'7일'],[30,'30일'],[90,'90일'],[0,'전체']].map(([v,l])=>
-      `<button data-r="${v}" class="${RANGE===v?'on':''}">${l}</button>`).join('')}
-  </div>
+  ${rangeBar()}
   <div class="range" style="margin-top:8px">
     ${chips.map(([v,l])=>`<button data-j="${v}" class="${JMODE===v?'on':''}">${l}</button>`).join('')}
   </div>
@@ -376,6 +498,7 @@ function journeyHTML(){
           · ${x.sec}초 · ${esc(x.utm)} · ${esc(x.device)}${x.scroll?' · 스크롤 '+x.scroll+'%':''}</span>
         <span class="sp"></span>
         ${x.tel?'<span class="tag y">전화</span>':''}${x.kakao?'<span class="tag y">카톡</span>':''}
+        <button class="jx" data-s="${x.id}" title="내부 방문으로 보고 통계에서 제외">제외</button>
       </div>
       <div class="jline">${x.items.slice(0,26).map(e=>{
         const t=EVKO[e.event]||e.event;
@@ -401,10 +524,7 @@ function adsHTML(){
   const keys=[...new Set([...Object.keys(bySrc),...Object.keys(spendBy)])];
   const today=new Date().toISOString().slice(0,10);
   return `
-  <div class="range">
-    ${[[1,'오늘'],[7,'7일'],[30,'30일'],[90,'90일'],[0,'전체']].map(([v,l])=>
-      `<button data-r="${v}" class="${RANGE===v?'on':''}">${l}</button>`).join('')}
-  </div>
+  ${rangeBar()}
   <div class="tblwrap" style="margin-top:14px">${keys.length?`<table>
     <thead><tr><th>유입원</th><th>방문</th><th>리드</th><th>전환율</th><th>광고비</th><th>CPA</th></tr></thead>
     <tbody>${keys.map(k=>{const v=bySrc[k]||{visit:0,lead:0},sp=spendBy[k]||0;
@@ -455,10 +575,7 @@ function leadsHTML(){
     (!FILTER||r.status===FILTER) &&
     (!q||(r.name||'').includes(q)||(r.phone||'').includes(q.replace(/-/g,''))));
   return `
-  <div class="range">
-    ${[[1,'오늘'],[7,'7일'],[30,'30일'],[90,'90일'],[0,'전체']].map(([v,l])=>
-      `<button data-r="${v}" class="${RANGE===v?'on':''}">${l}</button>`).join('')}
-  </div>
+  ${rangeBar()}
   <div class="tools">
     <input id="q" placeholder="이름·연락처 검색" value="${esc(Q)}">
     <select id="fs"><option value="">전체 상태</option>
@@ -608,11 +725,21 @@ function draw(){
   const view={stats:statsHTML,funnel:funnelHTML,journey:journeyHTML,
               ads:adsHTML,leads:leadsHTML,posts:postsHTML}[TAB]||statsHTML;
   shell(view());
-  app.querySelectorAll('.range button[data-r]').forEach(b=>b.onclick=()=>{RANGE=+b.dataset.r;draw();});
+  app.querySelectorAll('.range button[data-r]').forEach(b=>b.onclick=()=>{
+    RANGE=+b.dataset.r; FROM=''; TO=''; draw();});
+  const go=$('#d_go');
+  if(go)go.onclick=()=>{const f=$('#d_from').value,t=$('#d_to').value;
+    if(!f||!t){toast('시작일과 종료일을 모두 넣어 주세요');return;}
+    FROM=f;TO=t;draw();};
+  const cl=$('#d_clear'); if(cl)cl.onclick=()=>{FROM='';TO='';draw();};
+  const bq=$('#botq'); if(bq)bq.onclick=()=>{NOBOT=!NOBOT;draw();};
+  const ex=$('#exclr'); if(ex)ex.onclick=()=>{EXCL.clear();saveExcl();toast('제외 목록을 비웠습니다');draw();};
   app.querySelectorAll('.range button[data-j]').forEach(b=>b.onclick=()=>{JMODE=b.dataset.j;draw();});
   if(TAB==='leads')wireLeads();
   if(TAB==='posts')wirePosts();
   if(TAB==='ads')wireAds();
+  app.querySelectorAll('.jx').forEach(b=>b.onclick=()=>{
+    EXCL.add(b.dataset.s); saveExcl(); toast('이 세션을 통계에서 뺐습니다'); draw();});
 }
 
 function wireAds(){
