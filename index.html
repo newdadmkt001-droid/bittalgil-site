@@ -315,6 +315,38 @@
   .wire .wp,.wire .wbus{fill:none;stroke:var(--dash);stroke-width:1.4;stroke-dasharray:4 4}
   .wire .wd{fill:var(--bg);stroke:var(--dash);stroke-width:1.4}
   .wire .wbox{fill:none;stroke:var(--dash);stroke-width:1.4;stroke-dasharray:4 4}
+  /* 진입 시 1회 — 배선도가 스스로 그려진다. 무한 반복이 아니라 한 번이다 */
+  .wire.draw .wp,.wire.draw .wbus,.wire.draw .wbox{
+    stroke-dasharray:220;stroke-dashoffset:220;animation:wdraw .9s var(--e-in) forwards}
+  .wire.draw .wn:nth-child(1) .wp{animation-delay:.05s}
+  .wire.draw .wn:nth-child(2) .wp{animation-delay:.15s}
+  .wire.draw .wn:nth-child(3) .wp{animation-delay:.25s}
+  .wire.draw .wn:nth-child(4) .wp{animation-delay:.35s}
+  .wire.draw .wbus{animation-delay:.5s}
+  .wire.draw .wbox{animation-delay:.75s}
+  @keyframes wdraw{to{stroke-dashoffset:0}}
+  /* 그리기가 끝나면 파선 상태로 되돌아간다 — 파선은 '아직 미확정'이라는 뜻이라
+     연출 때문에 의미가 바뀌면 안 된다 */
+  .wire.drawn .wp,.wire.drawn .wbus,.wire.drawn .wbox{stroke-dasharray:4 4;stroke-dashoffset:0}
+
+  /* 선택지가 차례로 올라온다. 한 번만 돈다 */
+  .q1card.intro .q1o{opacity:0;animation:q1in .42s var(--e-in) forwards}
+  .q1card.intro .q1o:nth-child(1){animation-delay:.10s}
+  .q1card.intro .q1o:nth-child(2){animation-delay:.18s}
+  .q1card.intro .q1o:nth-child(3){animation-delay:.26s}
+  .q1card.intro .q1o:nth-child(4){animation-delay:.34s}
+  @keyframes q1in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  /* 아직 아무것도 안 골랐을 때만, 첫 노드가 조용히 숨쉰다.
+     무한 애니메이션은 페이지 전체에서 이것 하나다 */
+  .wire.idle .wn[data-n="debt"] .wd{animation:nod 2.4s ease-in-out infinite}
+  @keyframes nod{0%,100%{fill:var(--bg)}50%{fill:var(--brand);stroke:var(--brand)}}
+  @media (prefers-reduced-motion:reduce){
+    .wire.draw .wp,.wire.draw .wbus,.wire.draw .wbox,
+    .q1card.intro .q1o{animation:none;opacity:1;stroke-dasharray:4 4;stroke-dashoffset:0}
+    .wire.idle .wn[data-n="debt"] .wd{animation:none}
+  }
+
   /* 3상태: 파선=미확정 / 실선=확정 / 파랑=지금 여기 */
   .wire .wn.on .wp{stroke:var(--brand);stroke-dasharray:none}
   .wire .wn.on .wd{fill:var(--brand);stroke:var(--brand)}
@@ -422,6 +454,17 @@
     background:var(--card);font-size:var(--fs-b);font-weight:600;color:var(--t1);font-family:inherit}
   .fi input::placeholder{color:var(--t4);font-weight:500}
   .fi input:focus{outline:2px solid var(--brand);outline-offset:0;border-color:transparent}
+  .fi{position:relative}
+  .fi.bad input{border-color:var(--warn)}
+  .fi.bad input:focus{outline-color:var(--warn)}
+  .fi .msg{margin-top:7px;font-size:var(--fs-m);font-weight:600;color:var(--warn);
+    line-height:1.4;display:none}
+  .fi.bad .msg{display:block}
+  .fi.ok input{border-color:var(--brand)}
+  /* 제출 버튼은 세 조건이 다 맞기 전까지 눌리지 않는다.
+     누르고 나서 튕기는 것보다 못 누르는 게 먼저 보인다 */
+  .btn[disabled]{opacity:.38;pointer-events:none}
+  .agree.bad{color:var(--warn)}
   .agree{margin-top:var(--s3);display:flex;gap:10px;align-items:flex-start;
     font-size:var(--fs-m);font-weight:500;color:var(--t3);line-height:var(--lh5)}
   .agree input{width:20px;height:20px;margin-top:2px;flex:none;accent-color:var(--brand)}
@@ -531,6 +574,18 @@
   .cond .s{font-size:var(--fs-m);font-weight:500;color:var(--t3)}
   .cond .tag{margin-left:auto}
 
+  /* 결과에서 나가는 길 — 상담 말고도 갈 곳이 있어야 한다 */
+  .rnav{margin-top:var(--s5);border-top:1px solid var(--line);display:flex;flex-direction:column}
+  .rnav a{display:flex;align-items:center;gap:var(--s3);min-height:56px;
+    border-bottom:1px solid var(--line);color:var(--t1);text-decoration:none;
+    font-size:var(--fs-b);font-weight:700}
+  .rnav a span{flex:1}
+  .rnav a:first-child span{flex:1}
+  .rnav a svg{flex:none;color:var(--t4)}
+  .rnav a:first-child svg{color:var(--t1)}
+  .rnav a:active{color:var(--brand-ink)}
+  @media (min-width:640px){.rnav{display:grid;grid-template-columns:1fr 1fr;column-gap:var(--s5)}}
+
   .gate{margin-top:var(--s6);padding:var(--s5);border-radius:var(--r-lg);
     background:var(--stage);border:1px solid var(--line)}
   .gate h2{font-size:20px;font-weight:800;color:var(--t1);line-height:var(--lh3);letter-spacing:-.03em}
@@ -575,20 +630,20 @@
   @media (min-width:640px){.grid{max-width:var(--w-tab)}}
   @media (min-width:1025px){.grid{max-width:1080px;display:grid;grid-template-columns:repeat(2,1fr);
     gap:var(--s4);align-content:start}.grid > .legal{grid-column:1/-1}}
-  /* 유형·설명이 왼쪽 한 단, 결과 숫자가 오른쪽 한 단. 숫자는 세로 가운데에 건다.
-     이전에는 baseline 정렬이라 긴 설명문이 아래로 흐르면서 좌우가 어긋났다 */
+  /* 왼쪽은 유형+설명 한 덩어리, 오른쪽은 [값 / 단위] 두 줄. 둘 다 세로 가운데.
+     오른쪽 열 폭을 고정해 카드 네 장의 오른쪽 축을 하나로 맞춘다 */
   .case{border-radius:var(--r-lg);background:var(--stage);padding:var(--s5);
-    display:grid;grid-template-columns:minmax(0,1fr) 6.4em;column-gap:var(--s4);align-items:center}
-  @media (min-width:640px){.case{grid-template-columns:minmax(0,1fr) 7.2em}}
-  .case .top{display:contents}
-  .case .ty{grid-column:1;grid-row:1;font-size:var(--fs-m);font-weight:700;color:var(--t3)}
-  .case .why{grid-column:1;grid-row:2;margin-top:4px;font-size:var(--fs-b);font-weight:600;
-    color:var(--t1);line-height:1.45;letter-spacing:-.015em}
-  .case .cut{grid-column:2;grid-row:1/span 2;align-self:center;justify-self:stretch;
-    text-align:right;font-size:30px;font-weight:800;color:var(--brand-ink);letter-spacing:-.045em;
-    line-height:1.08;font-variant-numeric:tabular-nums}
-  .case .cut.txt{font-size:20px;line-height:1.28}
-  @media (min-width:640px){.case .cut{font-size:34px}.case .cut.txt{font-size:22px}}
+    display:flex;align-items:center;gap:var(--s4)}
+  .case .ct{flex:1;min-width:0}
+  .case .ty{font-size:var(--fs-m);font-weight:700;color:var(--t3)}
+  .case .why{margin-top:5px;font-size:var(--fs-b);font-weight:600;color:var(--t1);
+    line-height:1.45;letter-spacing:-.015em}
+  .case .cut{flex:none;width:5.2em;text-align:right;display:block}
+  .case .cut b{display:block;font-size:32px;font-weight:800;color:var(--brand-ink);
+    letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums}
+  .case .cut em{display:block;margin-top:4px;font-style:normal;font-size:var(--fs-m);
+    font-weight:700;color:var(--brand-ink);letter-spacing:-.02em}
+  @media (min-width:640px){.case .cut{width:5.6em}.case .cut b{font-size:38px}}
   .case .nums{margin-top:var(--s3);display:flex;flex-wrap:wrap;gap:6px}
   .case .nums span{font-size:var(--fs-m);font-weight:700;color:var(--t2);background:var(--card);
     border-radius:var(--r-sm);padding:5px 10px}
@@ -1059,10 +1114,16 @@ const DIFF=[['압도적 전문성','대한변호사협회 인증 도산 전문�
   ['변호사 직접상담','전문변호사의 정확한 상황진단',['신용정보조회 무료','신청서류 90% 신속발급대행','요청사항 정확히 반영']],
   ['합리적인 수임료','투명한 진행 비용',['법원 사건번호 대행','월 변제금을 낮추는 노하우','수임료 장기분납']]];
 
-const CASES=[['면책 결정','개인파산 · 고액채무','사업 실패로 누적된 고액 채무를 정리'],
-  ['80% 감액','개인회생 · 2번째 신청','면책 5년 뒤 재신청으로 다시 해결'],
-  ['91% 감액','개인회생 · 코인투자 실패','코인 손실 채무를 인가 결정으로 정리'],
-  ['24개월 변제','청년회생 · 사회초년생','사회초년생 채무를 최단 기간 인가']];
+/* [값, 단위, 유형, 설명] — 값과 단위를 나눠야 카드 네 장이 같은 리듬을 갖는다.
+   한 문자열로 두면 '80% 감액'만 두 줄로 접혀 오른쪽 축이 카드마다 달라졌다 */
+const CASES=[['면책','결정','개인파산 · 고액채무','사업 실패로 쌓인 고액 채무 정리'],
+  ['80%','감액','개인회생 · 2번째 신청','면책 5년 뒤 재신청으로 다시 해결'],
+  ['91%','감액','개인회생 · 코인투자 실패','코인 손실 채무를 인가로 정리'],
+  ['24','개월 변제','청년회생 · 사회초년생','사회초년생 채무를 최단 기간 인가']];
+const caseCard=c=>`<div class="case">
+  <div class="ct"><span class="ty">${c[2]}</span><p class="why">${c[3]}</p></div>
+  <span class="cut"><b>${c[0]}</b><em>${c[1]}</em></span>
+</div>`;
 
 /* 바 = "줄어든 비율". unit 이 무엇이 줄었는지 말한다 */
 /* "100% 탕감"은 쓰지 않는다 — 조세·벌금·양육비 등 비면책채권은 파산해도 남는다.
@@ -1273,10 +1334,9 @@ const foot=()=>`<footer class="foot">
     <div><h4>서비스</h4><ul><li><a href="#/diagnosis">변제금 진단</a></li><li><a href="#/solutions">해법 사전</a></li><li><a href="#/consult">상담 신청</a></li></ul></div>
     <div><h4>알아보기</h4><ul><li><a href="#/columns">칼럼</a></li><li><a href="#/cases">사례</a></li><li><a href="#/faq">FAQ</a></li><li><a href="#/about">소개</a></li><li><a href="#/privacy">개인정보처리방침</a></li><li><a href="#/terms">이용약관</a></li></ul></div>
   </div>
-  <p class="biz"><b>${OP.name}</b> · 대표 ${OP.ceo} · 사업자등록번호 ${OP.biz}<br>${OP.addr}<br>
-  <span style="display:inline-block;margin-top:.6em">법률사무 수행 <b>${BIZ.firm}</b> · 대표 ${BIZ.ceo} · 광고책임변호사 ${BIZ.lawyer}<br>
-  사업자등록번호 ${BIZ.biz} · ${BIZ.addr}<br>${BIZ.tel} · ${BIZ.email}</span><br>
-  <span style="display:inline-block;margin-top:.6em">빚탈길은 ${OP.name}가 운영하며, 법률사무는 ${BIZ.firm}이 수행합니다. 진단 결과는 참고용입니다.</span></p>
+  <p class="biz">법률사무 수행 <b>${BIZ.firm}</b> · 광고책임변호사 ${BIZ.lawyer} · ${BIZ.tel}<br>
+  <span style="display:inline-block;margin-top:.6em">진단 결과는 참고용이며 사건마다 사정이 달라 같은 결과를 보장하지 않습니다.
+  운영·개인정보 수집 주체는 <a href="#/privacy">개인정보처리방침</a>에 표기돼 있습니다.</span></p>
 </footer>`;
 
 const phead=(k,t,d)=>`<header class="phead"><span class="kick rv">${k}</span>
@@ -1325,7 +1385,7 @@ ${blk('c4',scrAlert(),'서초동에 오지 않아도<br>끝까지 진행됩니�
     <div><b>0<small style="font-size:.5em;font-weight:700">원</small></b><span>진단·상담 비용</span></div>
   </div>
   <div class="caselist seq" data-seq>
-    ${CASES.slice(0,3).map(c=>`<div class="case"><div class="top"><span class="ty">${c[1]}</span><span class="cut ${/%/.test(c[0])?'num':'txt'}">${c[0]}</span></div><p class="why">${c[2]}</p></div>`).join('')}
+    ${CASES.slice(0,3).map(caseCard).join('')}
   </div>
   <div class="rv">${pill('사례 전체 보기','#/cases')}</div>
 </div></section>
@@ -1419,6 +1479,13 @@ R.result=()=>{
       : `<h2>요건은 모두<br>확인됐습니다</h2>
          <p>실제 인가액은 채권자 구성과 법원 판단에 따라 달라집니다. ${BIZ.firm}이 통화로 확인해 드립니다.</p>`}</div>
     <a class="btn full rv" href="#/consult" style="margin-top:var(--s4)" data-h="medium">통화로 확인받기</a>
+    <!-- 결과가 막다른 골목이었다. 다시 해보거나 더 읽거나 돌아갈 길을 준다 -->
+    <div class="rnav rv">
+      <a href="#/diagnosis" data-h="light">${IC.back}<span>다시 진단하기</span></a>
+      <a href="#/columns/payment-calc"><span>산정 근거 읽기</span>${IC.arrow(18)}</a>
+      <a href="#/cases"><span>비슷한 사례 보기</span>${IC.arrow(18)}</a>
+      <a href="#/"><span>처음으로</span>${IC.arrow(18)}</a>
+    </div>
     <p class="legal">진단 결과는 참고용이며 사건마다 사정이 달라 같은 결과를 보장하지 않습니다.</p>
   </div>
   <div style="height:var(--s9)"></div></div>`;
@@ -1497,9 +1564,7 @@ R.columnDetail=(k)=>{const p=POSTS[k];if(!p)return R.columns();
 R.cases=()=>`
 ${phead('성공사례','빚탈길 진단을 거쳐<br>결정된 사건입니다','사건마다 사정이 달라 같은 결과를 보장하지 않습니다.')}
 <div class="grid seq" data-seq>
-  ${CASES.map(c=>`<div class="case"><div class="top"><span class="ty">${c[1]}</span>
-    <span class="cut ${/%/.test(c[0])?'num':'txt'}">${c[0]}</span></div>
-    <p class="why">${c[2]}</p></div>`).join('')}
+  ${CASES.map(caseCard).join('')}
   <p class="legal">${BIZ.firm} 수행 사건 기준. 개인 식별이 가능한 정보는 제외했습니다.</p>
 </div>
 <div class="wrap rv" style="padding-bottom:var(--s9)"><a class="btn full" href="#/diagnosis">1분 진단</a></div>
@@ -1550,7 +1615,8 @@ ${phead('상담 신청','진단이 번거로우시면<br>바로 통화하셔도 
   <form class="rv" id="cForm" novalidate>
     <div class="fields">
       <div class="fi"><input type="text" name="name" placeholder="이름" autocomplete="name" required></div>
-      <div class="fi"><input type="tel" name="phone" placeholder="연락처" inputmode="numeric" autocomplete="tel" required></div>
+      <div class="fi"><input type="tel" name="phone" placeholder="휴대폰 번호"
+        inputmode="numeric" autocomplete="tel" maxlength="13" required></div>
     </div>
     <label class="agree"><input type="checkbox" name="agree" required>
       <span><a href="#/privacy">개인정보 수집·이용</a> 및 ${BIZ.firm} 제공에 동의합니다. 수집 항목은 이름·연락처이며 상담 연결 목적에만 씁니다.</span></label>
@@ -1622,7 +1688,15 @@ function initHeroDemo(){
   const wire=document.getElementById('hwire');
   const opts=[...card.querySelectorAll('.q1o')];
   const pre=(()=>{try{return sessionStorage.getItem('btg_q0')}catch(e){return null}})();
-  const mark=i=>{opts.forEach(o=>o.classList.remove('on'));
+  /* 진입 연출 — 배선도를 한 번 그리고, 선택 전이면 첫 노드만 숨쉬게 둔다 */
+  if(!RM&&wire){
+    card.classList.add('intro');
+    wire.classList.add('draw');
+    setTimeout(()=>{wire.classList.remove('draw');wire.classList.add('drawn');
+      if(pre===null)wire.classList.add('idle');},1700);
+  }else if(wire&&pre===null){wire.classList.add('idle');}
+  const mark=i=>{wire&&wire.classList.remove('idle');
+    opts.forEach(o=>o.classList.remove('on'));
     opts[i].classList.add('on');
     const n=wire&&wire.querySelector('[data-n="debt"]'); n&&n.classList.add('on');
     const v=wire&&wire.querySelector('[data-n="debt"] .wl');
@@ -1765,7 +1839,8 @@ function renderGate(){
     <form id="gForm" novalidate>
       <div class="fields">
         <div class="fi"><input type="text" name="name" placeholder="이름" autocomplete="name"></div>
-        <div class="fi"><input type="tel" name="phone" placeholder="연락처" inputmode="numeric" autocomplete="tel"></div>
+        <div class="fi"><input type="tel" name="phone" placeholder="휴대폰 번호"
+          inputmode="numeric" autocomplete="tel" maxlength="13"></div>
       </div>
       <label class="agree"><input type="checkbox" name="agree">
         <span>빚탈길이 이름·연락처를 받아 상담 연결에만 씁니다.
@@ -1774,16 +1849,66 @@ function renderGate(){
         </form>
   </div>`;
   const f=document.getElementById('gForm');
+  const validate=wireForm(f);
   f.onsubmit=e=>{e.preventDefault();
-    const n=f.name_?null:f.querySelector('[name=name]'), t=f.querySelector('[name=phone]'), a=f.querySelector('[name=agree]');
-    let ok=true;
-    if(!n.value.trim()){n.focus();ok=false;}
-    else if(!/^01[016789][-\s]?\d{3,4}[-\s]?\d{4}$/.test(t.value.trim())){t.focus();ok=false;}
-    else if(!a.checked){a.focus();ok=false;}
-    if(!ok)return;
+    if(!validate())return;
+    const n=f.querySelector('[name=name]'), t=f.querySelector('[name=phone]');
     try{sessionStorage.setItem('btg_ans',JSON.stringify(ans));}catch(_){}
     submitLead(f,{name:n.value.trim(), phone:digits(t.value), form:'result',
       answers:ans.slice(), calc:RESULT?RESULT.calc:null, eligible:RESULT?RESULT.isEligible:null}, '#/result');
+  };
+}
+
+/* ══ 입력 검증 ══
+   전화번호는 치는 동안 010-1234-5678 로 맞춰 준다 — 국내 폼의 사실상 표준이고,
+   하이픈을 스스로 넣게 두면 형식 오류가 그대로 전송 실패가 된다.
+   이름은 자모만(ㅌㅅㅌ) 쳐도 통과하던 것을 막는다. */
+const PHONE_RE=/^(?:010\d{8}|01[16789]\d{7,8})$/;
+const NAME_RE=/^(?:[가-힣]{2,}|[A-Za-z][A-Za-z\s.]{1,})$/;
+const fmtPhone=v=>{const d=digits(v).slice(0,11);
+  if(d.length<4)return d;
+  if(d.length<8)return d.slice(0,3)+'-'+d.slice(3);
+  return d.slice(0,3)+'-'+d.slice(3,d.length-4)+'-'+d.slice(d.length-4);};
+
+function fieldMsg(input,text){
+  const box=input.closest('.fi'); if(!box)return;
+  let m=box.querySelector('.msg');
+  if(!m){m=el('<p class="msg"></p>'); box.appendChild(m);}
+  m.textContent=text||'';
+  box.classList.toggle('bad',!!text);
+  box.classList.toggle('ok',!text&&!!input.value.trim());
+}
+
+/* 폼 하나를 통째로 살아 있게 만든다. 게이트·상담이 같은 함수를 쓴다 */
+function wireForm(form){
+  const n=form.querySelector('[name=name]'), t=form.querySelector('[name=phone]'),
+        a=form.querySelector('[name=agree]'), btn=form.querySelector('button[type=submit]');
+  const okName=()=>NAME_RE.test((n.value||'').trim());
+  const okPhone=()=>PHONE_RE.test(digits(t.value));
+  const sync=()=>{ if(btn) btn.disabled=!(okName()&&okPhone()&&a.checked); };
+  n.addEventListener('input',()=>{ if(n.closest('.fi').classList.contains('bad'))
+    fieldMsg(n, okName()?'':'이름을 정확히 입력해 주세요'); sync(); });
+  n.addEventListener('blur',()=>{ if(n.value.trim())
+    fieldMsg(n, okName()?'':'이름을 정확히 입력해 주세요'); });
+  t.addEventListener('input',()=>{
+    const pos=t.selectionStart===t.value.length;
+    t.value=fmtPhone(t.value);
+    if(pos)t.setSelectionRange(t.value.length,t.value.length);
+    if(t.closest('.fi').classList.contains('bad')||digits(t.value).length>=11)
+      fieldMsg(t, okPhone()?'':'휴대폰 번호 11자리를 확인해 주세요');
+    sync(); });
+  t.addEventListener('blur',()=>{ if(t.value.trim())
+    fieldMsg(t, okPhone()?'':'휴대폰 번호 11자리를 확인해 주세요'); });
+  a.addEventListener('change',()=>{ a.closest('.agree').classList.toggle('bad',!a.checked); sync(); });
+  sync();
+  /* 첫 제출 시도에서 무엇이 비었는지 한꺼번에 보여준다 */
+  return ()=>{
+    let ok=true;
+    if(!okName()){fieldMsg(n,'이름을 정확히 입력해 주세요');ok=false;}
+    if(!okPhone()){fieldMsg(t,'휴대폰 번호 11자리를 확인해 주세요');ok=false;}
+    if(!a.checked){a.closest('.agree').classList.add('bad');ok=false;}
+    if(!ok)(form.querySelector('.fi.bad input')||a).focus();
+    return ok;
   };
 }
 
@@ -1868,15 +1993,14 @@ function bind(key){
   if(key==='/done')HAP.success();
   if(key==='/consult'){
     const cf=document.getElementById('cForm');
-    if(cf) cf.onsubmit=e=>{e.preventDefault();
-      const n=cf.querySelector('[name=name]'),t=cf.querySelector('[name=phone]'),a=cf.querySelector('[name=agree]');
-      let ok=true;
-      if(!n.value.trim()){n.focus();ok=false;}
-      else if(!/^01[016789][-\s]?\d{3,4}[-\s]?\d{4}$/.test(t.value.trim())){t.focus();ok=false;}
-      else if(!a.checked){a.focus();ok=false;}
-      if(!ok)return;
-      submitLead(cf,{name:n.value.trim(), phone:digits(t.value), form:'consult'});
-    };
+    if(cf){
+      const validate=wireForm(cf);
+      cf.onsubmit=e=>{e.preventDefault();
+        if(!validate())return;
+        const n=cf.querySelector('[name=name]'),t=cf.querySelector('[name=phone]');
+        submitLead(cf,{name:n.value.trim(), phone:digits(t.value), form:'consult'});
+      };
+    }
   }
 }
 
