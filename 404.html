@@ -284,8 +284,16 @@
   .hero{padding:var(--s7) var(--pad) 0;max-width:var(--w-page);margin:0 auto;width:100%}
   .hero .sub{margin-top:var(--s3);font-size:var(--fs-b);font-weight:500;color:var(--t3);line-height:var(--lh5)}
   .hero .d1{margin-top:var(--s4)}
-  .hlead{display:flex;flex-direction:column;align-items:flex-start}
-  .hlead .hcta{align-self:stretch}
+  /* .hlead 를 display:contents 로 풀어 자식들이 히어로의 직접 항목이 된다.
+     그래야 데모를 CTA 위로 끌어올릴 수 있다 */
+  .hero{display:flex;flex-direction:column;align-items:flex-start}
+  .hlead{display:contents}
+  .hero > .hlead > .bdg{order:1}
+  .hero > .hlead > .d1{order:2}
+  .hero > .hlead > .sub{order:3}
+  .hero > .hdemo{order:4;align-self:stretch}
+  .hero > .hlead > .hcta{order:5;align-self:stretch}
+  .hero > .hlead > .hfine{order:6}
   .hdemo{margin-top:var(--s6);display:flex;flex-direction:column;gap:var(--s4)}
   .q1card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
     padding:var(--s4) var(--s4) var(--s4);box-shadow:var(--lift-lg)}
@@ -293,7 +301,21 @@
     font-size:var(--fs-m);font-weight:700;color:var(--t3);font-variant-numeric:tabular-nums}
   .q1q{margin-top:var(--s3);font-size:20px;font-weight:800;color:var(--t1);
     line-height:1.32;letter-spacing:-.03em}
+  .q1q{min-height:2.64em}
+  .hscenes{position:relative}
+  .hscn{transition:opacity var(--t-slow) var(--e-in),transform var(--t-slow) var(--e-in)}
+  .hscn.out{position:absolute;inset:0;opacity:0;transform:translateY(-10px);pointer-events:none}
+  .hscn.in{opacity:1;transform:none}
   .q1opts{margin-top:var(--s4);display:flex;flex-direction:column;gap:8px}
+  .q1o[hidden]{display:none}
+  .hrk{font-size:var(--fs-m);font-weight:600;color:var(--t3)}
+  .hamt{display:flex;align-items:baseline;gap:6px;margin-top:6px}
+  .hamt b{font-size:44px;font-weight:800;color:var(--t1);line-height:1;letter-spacing:-.05em;
+    font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1}
+  .hamt span{font-size:19px;font-weight:700;color:var(--t1)}
+  .hsub{margin-top:12px;font-size:var(--fs-m);font-weight:700;color:var(--brand-ink)}
+  .hfin{margin-top:var(--s4);padding-top:var(--s3);border-top:1px solid var(--line);
+    font-size:var(--fs-m);font-weight:500;color:var(--t3)}
   .q1o{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;
     width:100%;padding:0 14px;border:1px solid var(--line2);border-radius:var(--r);
     background:var(--card);font-size:var(--fs-b);font-weight:600;color:var(--t1);
@@ -329,22 +351,12 @@
      연출 때문에 의미가 바뀌면 안 된다 */
   .wire.drawn .wp,.wire.drawn .wbus,.wire.drawn .wbox{stroke-dasharray:4 4;stroke-dashoffset:0}
 
-  /* 선택지가 차례로 올라온다. 한 번만 돈다 */
-  .q1card.intro .q1o{opacity:0;animation:q1in .42s var(--e-in) forwards}
-  .q1card.intro .q1o:nth-child(1){animation-delay:.10s}
-  .q1card.intro .q1o:nth-child(2){animation-delay:.18s}
-  .q1card.intro .q1o:nth-child(3){animation-delay:.26s}
-  .q1card.intro .q1o:nth-child(4){animation-delay:.34s}
-  @keyframes q1in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-
-  /* 아직 아무것도 안 골랐을 때만, 첫 노드가 조용히 숨쉰다.
-     무한 애니메이션은 페이지 전체에서 이것 하나다 */
-  .wire.idle .wn[data-n="debt"] .wd{animation:nod 2.4s ease-in-out infinite}
-  @keyframes nod{0%,100%{fill:var(--bg)}50%{fill:var(--brand);stroke:var(--brand)}}
+  /* 배선도가 다 차면 잠금이 풀린다 */
+  .wire.done .wbox{stroke:var(--brand);stroke-dasharray:none}
+  .wire.done .wv{fill:var(--brand-ink);font-weight:800}
   @media (prefers-reduced-motion:reduce){
-    .wire.draw .wp,.wire.draw .wbus,.wire.draw .wbox,
-    .q1card.intro .q1o{animation:none;opacity:1;stroke-dasharray:4 4;stroke-dashoffset:0}
-    .wire.idle .wn[data-n="debt"] .wd{animation:none}
+    .wire.draw .wp,.wire.draw .wbus,.wire.draw .wbox{
+      animation:none;stroke-dasharray:4 4;stroke-dashoffset:0}
   }
 
   /* 3상태: 파선=미확정 / 실선=확정 / 파랑=지금 여기 */
@@ -362,7 +374,10 @@
     .hero{max-width:var(--w-page);padding:var(--s11) var(--pad) 0;
       display:grid;grid-template-columns:minmax(0,1fr) minmax(470px,1.02fr);
       column-gap:64px;align-items:center;min-height:560px}
-    .hero .hlead{grid-column:1}
+    /* 데스크톱은 2열 — contents 를 되돌려 좌측 한 덩어리로 만든다 */
+    .hero{display:grid;align-items:center}
+    .hero .hlead{display:flex;flex-direction:column;align-items:flex-start;grid-column:1}
+    .hero .hlead .hcta{align-self:stretch}
     .hero .bdg{font-size:14px}
     .hero .d1{margin-top:22px}
     .hero .sub{margin-top:18px;max-width:24em}
@@ -1312,7 +1327,7 @@ const WNODES=[['채무 총액','debt'],['월 소득','income'],['가구원 수',
 const wiring=(id='hwire')=>`<div class="wirebox">
   <svg class="wire" id="${id}" viewBox="0 0 344 220" role="img"
     aria-label="법원 산식 배선도 — 네 개 값이 모여 월 변제금 하나가 됩니다">
-    ${WNODES.map((n,i)=>{const y=18+i*38;return `<g class="wn" data-n="${n[1]}">
+    ${WNODES.map((n,i)=>{const y=18+i*38;return `<g class="wn" data-n="${n[1]}" data-label="${n[0]}">
       <text x="0" y="${y+4}" class="wl">${n[0]}</text>
       <rect x="118" y="${y-4}" width="8" height="8" class="wd"/>
       <path class="wp" d="M126 ${y}H206"/></g>`}).join('')}
@@ -1321,7 +1336,7 @@ const wiring=(id='hwire')=>`<div class="wirebox">
     <text x="248" y="189" class="wl">월 변제금</text>
     <text x="248" y="206" class="wv">잠김</text>
   </svg>
-  <p class="wcap">네 값이 정해지면 월 변제금이 나와요</p>
+  <p class="wcap" data-idle="네 값이 정해지면 월 변제금이 나와요">네 값이 정해지면 월 변제금이 나와요</p>
 </div>`;
 
 const blk=(cls,screen,title,linkT,linkH,label)=>`<section class="blk rv">
@@ -1356,10 +1371,22 @@ R.home=()=>`
   </div>
   <div class="hdemo rv">
     <div class="q1card" id="hq1">
-      <div class="q1h"><b>변제금 진단</b><span>1 / 9</span></div>
-      <p class="q1q">${QS[0].q}</p>
-      <div class="q1opts">${QS[0].o.map((o,i)=>`<button class="q1o" type="button" data-i="${i}" data-h="light">
-        <span>${o[0]}</span><span class="ck">${IC.check(20)}</span></button>`).join('')}</div>
+      <div class="q1h"><b id="hHd">변제금 진단</b><span id="hStep">1 / 9</span></div>
+      <div class="hscenes">
+        <div class="hscn in" id="hQ">
+          <p class="q1q" id="hQz">${QS[0].q}</p>
+          <!-- 슬롯 4개를 미리 깔아 두고 문항마다 개수만 조절한다.
+               매번 새로 만들면 클릭 핸들러를 다시 걸어야 하고 높이가 튄다 -->
+          <div class="q1opts">${[0,1,2,3].map(i=>`<button class="q1o" type="button" data-i="${i}" data-h="light">
+            <span class="lb"></span><span class="ck">${IC.check(20)}</span></button>`).join('')}</div>
+        </div>
+        <div class="hscn out" id="hR">
+          <p class="hrk">예상 월 변제금</p>
+          <div class="hamt"><b class="num" id="hAmt">0</b><span>원</span></div>
+          <p class="hsub num" id="hSub"></p>
+          <p class="hfin">9문항 · 무료 · 지금 바로 내 조건으로</p>
+        </div>
+      </div>
     </div>
     ${wiring()}
   </div>
@@ -1683,29 +1710,117 @@ const won=n=>n.toLocaleString('ko-KR'), man=n=>Math.round(n/10000).toLocaleStrin
 /* ══ 히어로 Q1 — 자동재생 데모를 버리고 진짜 문항을 넣었다.
    고르면 배선도의 '채무 총액' 마디가 파선→실선으로 채워지고,
    그 답이 그대로 1번 문항의 답이 되어 퍼널은 2번부터 시작한다. ══ */
+/* ══ 히어로 자동 재생 ══
+   9문항을 스스로 풀고, 답이 들어갈 때마다 배선도의 해당 마디가 파선→실선이 된다.
+   마지막에 실제 엔진이 계산한 월 변제금이 나온다 — 지어낸 숫자가 아니다.
+   사용자가 아무 선택지나 누르면 즉시 멈추고 그 답이 1번 문항의 답이 된다. */
+const HERO_ANS=[2,1,1,0,2,1,0,0,1];   /* 데모 시나리오: 6,500만 / 직장인 / 325만 / 2인 / 무재산 */
+const HERO_WIRE={0:'debt',4:'income',5:'fam',6:'asset'};
+
 function initHeroDemo(){
   const card=document.getElementById('hq1'); if(!card)return;
   const wire=document.getElementById('hwire');
   const opts=[...card.querySelectorAll('.q1o')];
-  const pre=(()=>{try{return sessionStorage.getItem('btg_q0')}catch(e){return null}})();
-  /* 진입 연출 — 배선도를 한 번 그리고, 선택 전이면 첫 노드만 숨쉬게 둔다 */
-  if(!RM&&wire){
-    card.classList.add('intro');
-    wire.classList.add('draw');
-    setTimeout(()=>{wire.classList.remove('draw');wire.classList.add('drawn');
-      if(pre===null)wire.classList.add('idle');},1700);
-  }else if(wire&&pre===null){wire.classList.add('idle');}
-  const mark=i=>{wire&&wire.classList.remove('idle');
-    opts.forEach(o=>o.classList.remove('on'));
-    opts[i].classList.add('on');
-    const n=wire&&wire.querySelector('[data-n="debt"]'); n&&n.classList.add('on');
-    const v=wire&&wire.querySelector('[data-n="debt"] .wl');
-    if(v)v.textContent='채무 '+QS[0].o[i][0];};
-  if(pre!==null&&opts[+pre])mark(+pre);
-  opts.forEach((o,i)=>o.addEventListener('click',()=>{
-    mark(i);
+  const $=id=>document.getElementById(id);
+  let timers=[], live=true, running=false;
+  /* 카드가 문서에서 빠졌으면(=다른 화면으로 이동) 스스로 끝낸다.
+     안 그러면 타이머가 사라진 노드를 만져 TypeError 가 난다 */
+  const gone=()=>!card.isConnected;
+  const at=(ms,fn)=>timers.push(setTimeout(()=>{
+    if(gone()){live=false;running=false;clear();return;}
+    fn();
+  },ms));
+  const clear=()=>{timers.forEach(clearTimeout);timers=[];};
+
+  const resetWire=()=>{ if(!wire)return;
+    wire.classList.remove('done');
+    wire.querySelectorAll('.wn').forEach(g=>{
+      g.classList.remove('on');
+      g.querySelector('.wl').textContent=g.dataset.label;
+    });
+    const v=wire.querySelector('.wv'); if(v)v.textContent='잠김';
+    const cap=wire.closest('.wirebox').querySelector('.wcap');
+    if(cap)cap.textContent=cap.dataset.idle; };
+
+  const fillWire=(qi,ansIdx)=>{ const key=HERO_WIRE[qi]; if(!key||!wire)return;
+    const g=wire.querySelector(`[data-n="${key}"]`); if(!g)return;
+    g.classList.add('on');
+    g.querySelector('.wl').textContent=QS[qi].o[ansIdx][0]; };
+
+  const showQ=(qi,picked)=>{
+    $('hStep').textContent=(qi+1)+' / 9';
+    $('hQz').innerHTML=QS[qi].q;
+    opts.forEach((o,i)=>{ const t=QS[qi].o[i];
+      o.hidden=!t; o.classList.remove('on');
+      if(t)o.querySelector('.lb').textContent=t[0]; });
+    if(picked!=null&&opts[picked])opts[picked].classList.add('on'); };
+
+  const scene=(inEl,outEl)=>{inEl.className='hscn in';outEl.className='hscn out';};
+
+  /* 마지막 화면 — 데모 답으로 엔진을 실제로 돌린다 */
+  const finish=(animate)=>{
+    const c=calcBestCase(buildInput(HERO_ANS));
+    $('hHd').textContent='진단 리포트'; $('hStep').textContent='예시';
+    scene($('hR'),$('hQ'));
+    wire&&wire.classList.add('done');
+    const v=wire&&wire.querySelector('.wv');
+    if(v)v.textContent=won(c.monthlyPayment)+'원';
+    const cap=wire&&wire.closest('.wirebox').querySelector('.wcap');
+    if(cap)cap.textContent='이 네 값으로 법원 산식이 계산한 결과예요';
+    $('hSub').textContent=`${won(c.originalDebt)}원 → 총 ${won(c.estimatedRepayment)}원 · ${c.reductionPercent}% 감액`;
+    if(!animate){$('hAmt').textContent=won(c.monthlyPayment);return;}
+    const t0=performance.now(), to=c.monthlyPayment;
+    (function tick(now){ if(!live||gone())return;
+      const p=Math.min((now-t0)/900,1);
+      $('hAmt').textContent=won(Math.round(to*(1-Math.pow(1-p,3))));
+      if(p<1)requestAnimationFrame(tick); })(t0);
+  };
+
+  /* 사용자가 개입하면 데모는 끝난다. 누른 답이 1번 문항의 답이 된다 */
+  const takeOver=i=>{
+    live=false; running=false; clear();
+    $('hHd').textContent='변제금 진단';
+    scene($('hQ'),$('hR'));
+    showQ(0,i);
+    resetWire(); fillWire(0,i);
     try{sessionStorage.setItem('btg_q0',String(i));}catch(e){}
-  }));
+  };
+  opts.forEach((o,i)=>o.addEventListener('click',()=>takeOver(i)));
+
+  /* 이미 히어로에서 고른 적이 있으면 그 상태로 멈춰 둔다 */
+  const pre=(()=>{try{return sessionStorage.getItem('btg_q0')}catch(e){return null}})();
+  if(pre!==null&&QS[0].o[+pre]){ live=false; showQ(0,+pre); resetWire(); fillWire(0,+pre); return; }
+
+  if(RM){ showQ(0,null); finish(false); return; }
+
+  function run(){
+    if(!live)return;
+    running=true; clear();
+    $('hHd').textContent='변제금 진단';
+    $('hAmt').textContent='0';
+    scene($('hQ'),$('hR'));
+    resetWire();
+    if(wire){wire.classList.add('draw');
+      at(1000,()=>{wire.classList.remove('draw');wire.classList.add('drawn');});}
+    let t=520;
+    HERO_ANS.forEach((pick,qi)=>{
+      at(t,()=>showQ(qi,null));            /* 문항이 뜬다 */
+      at(t+430,()=>{opts[pick]&&opts[pick].classList.add('on'); fillWire(qi,pick);});
+      t+=880;                              /* 9문항 × 0.88초 ≈ 8초 */
+    });
+    at(t+120,()=>finish(true));
+    at(t+5200,run);                        /* 결과를 5.2초 보여주고 다시 */
+  }
+
+  /* 히어로는 문서 맨 위라 교차 관찰이 필요 없다.
+     오히려 리빌로 레이아웃이 흔들릴 때 exit/enter 가 잡혀 1번 문항으로 되감겼다.
+     탭이 가려지면 멈추고 돌아오면 이어서 다시 돈다. */
+  run();
+  document.addEventListener('visibilitychange',()=>{
+    if(!live)return;
+    if(document.hidden){running=false;clear();}
+    else if(!running)run();
+  });
 }
 
 /* ══ 진단 퍼널 ══ */
