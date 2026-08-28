@@ -876,6 +876,27 @@ function recentlySent(phone){
   }catch(e){ return false; }
 }
 
+/* ══ 퍼널 이벤트 ══
+   개인정보는 보내지 않는다 — 이름·연락처는 리드 테이블에만 들어간다.
+   여기 쌓이는 건 '몇 번 문항에서 나갔는가' 뿐이다.
+   실패해도 화면은 그대로 간다. 통계 때문에 사용자를 막지 않는다. */
+const EV_SEEN=new Set();
+function track(event,{step,label,once}={}){
+  const key=event+'|'+(step??'')+'|'+(label??'');
+  if(once){ if(EV_SEEN.has(key))return; EV_SEEN.add(key); }
+  const body={session_id:TRACK.session_id,event,step:step??null,label:label??null,
+    path:location.hash||'#/',device:TRACK.device,referrer:TRACK.first_referrer,
+    utm_source:TRACK.utm_source,utm_medium:TRACK.utm_medium,utm_campaign:TRACK.utm_campaign,
+    utm_content:TRACK.utm_content,utm_term:TRACK.utm_term};
+  const url=SB_URL+'/rest/v1/bittalgil_events';
+  const hdr={apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,
+    'Content-Type':'application/json',Prefer:'return=minimal'};
+  try{
+    /* 페이지를 떠나는 중에도 남게 keepalive 로 보낸다 */
+    fetch(url,{method:'POST',headers:hdr,body:JSON.stringify(body),keepalive:true}).catch(()=>{});
+  }catch(e){}
+}
+
 async function sendLead(payload){
   const r=await fetch(SB_URL+'/rest/v1/bittalgil_leads',{
     method:'POST',
@@ -1728,6 +1749,7 @@ function render(){
   fb.style.display=(flow||key==='/diagnosis'||key==='/consult')?'none':'';fb.classList.remove('show');
   document.querySelectorAll('#nmenu a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+key));
   window.scrollTo(0,0);bind(key);
+  track('view',{label:key});
 }
 /* ══ 인터랙션 런타임 ══ */
 const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1737,6 +1759,23 @@ const HAP={light:()=>navigator.vibrate&&navigator.vibrate(8),
            medium:()=>navigator.vibrate&&navigator.vibrate(15),
            success:()=>navigator.vibrate&&navigator.vibrate([10,40,10])};
 document.addEventListener('click',e=>{const t=e.target.closest('[data-h]');if(t){const f=HAP[t.dataset.h];f&&f();}},{passive:true});
+
+/* 밖으로 나가는 행동 — 전화·카톡은 사이트를 떠나므로 여기서 잡아 둔다 */
+document.addEventListener('click',e=>{
+  const a=e.target.closest('a[href]'); if(!a)return;
+  const h=a.getAttribute('href')||'';
+  if(h.startsWith('tel:'))track('cta_tel',{label:a.textContent.trim().slice(0,40)});
+  else if(h.includes('pf.kakao.com'))track('cta_kakao');
+  else if(h==='#/diagnosis'||h==='#/q')track('cta_start',{label:a.textContent.trim().slice(0,40)});
+},{passive:true});
+
+/* 얼마나 내려 읽었는가 — 25/50/75/100% 도달만 한 번씩 */
+addEventListener('scroll',()=>{
+  const h=document.documentElement.scrollHeight-innerHeight;
+  if(h<200)return;
+  const p=Math.round(scrollY/h*100);
+  [25,50,75,100].forEach(m=>{ if(p>=m)track('scroll',{step:m,once:true}); });
+},{passive:true});
 
 const won=n=>n.toLocaleString('ko-KR'), man=n=>Math.round(n/10000).toLocaleString('ko-KR')+'만';
 
@@ -1820,6 +1859,7 @@ function initHeroDemo(){
     const q=curQ;
     opts.forEach(o=>o.classList.remove('on'));
     opts[i]&&opts[i].classList.add('on');
+    track('hero_click',{step:q+1});
     if(q===0){ fillWire(0,i);
       try{sessionStorage.setItem('btg_q0',String(i));}catch(e){} }
     /* 누른 게 화면에 남는 걸 보고 넘어간다 */
@@ -1895,6 +1935,7 @@ function renderQ(prev){
     sg.classList.toggle('on',ci===cur); sg.classList.toggle('done',ci<cur);
   });
   const s=QS[qi];
+  track('q_enter',{step:qi+1,label:s.q.replace(/<br>/g,' '),once:true});
   /* 답변 로그 — 지나온 답 3개까지. ans[] 를 이미 들고 있으니 비용은 문자열 하나 */
   const log=ans.slice(0,qi).map((v,i)=>v==null?'':
     `<div class="lg">${QS[i].o[v][0]}</div>`).filter(Boolean).slice(-3).join('');
@@ -1919,6 +1960,7 @@ function renderQ(prev){
   body.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{
     body.querySelectorAll('.opt').forEach(x=>x.classList.remove('on'));
     o.classList.add('on'); ans[qi]=+o.dataset.i;
+    track('q_answer',{step:qi+1,label:QS[qi].o[+o.dataset.i][0]});
     paintWire(body.querySelector('#qwire'));
     /* 340ms — 배지 스프링(300ms)이 끝나고 나서 넘어간다. 240 이면 색조차 못 본다 */
     setTimeout(()=>{ if(qi<8){qi++;renderQ();} else renderCalc(); },340);});
@@ -1941,6 +1983,7 @@ function paintWire(svg){
 }/* 계산 중 2.4초 — 엔진이 이미 계산해 놓고 버리던 중간값을 화면에 인쇄한다.
    가짜 스피너가 아니라 진짜 산식이라 '법원 산식으로 계산합니다'가 여기서 증명된다 */
 function renderCalc(){
+  track('calc');
   const stage=document.getElementById('qStage');
   const c=calcBestCase(buildInput(ans));
   const w=n=>won(Math.round(n))+'원';
@@ -1982,6 +2025,7 @@ function renderCalc(){
    아무것도 안 주고 연락처만 요구하면 이탈한다. */
 function renderGate(){
   RESULT=checkEligibility(buildInput(ans)); window.RESULT=RESULT;
+  track('gate',{label:RESULT.isEligible?'요건 충족':'확인 필요'});
   const stage=document.getElementById('qStage');
   document.getElementById('qN').textContent='완료';   /* 문항 9 도 9/9 라 그대로 두면 같은 라벨이 두 번 나온다 */
   document.querySelectorAll('#qSegs .sg').forEach(sg=>{
@@ -2099,9 +2143,11 @@ async function submitLead(form, payload, next){
   try{
     await sendLead({...payload, consent:true, consent_at:new Date().toISOString()});
     sessionStorage.setItem('kn',payload.name);
+    track('submit',{label:payload.form});
     HAP.success(); go(dest);
   }catch(e){
     btn.disabled=false; btn.textContent=label;
+    track('submit_fail',{label:String(e.message||'').slice(0,80)});
     err.textContent='전송에 실패했어요. 잠시 후 다시 시도하시거나 '+BIZ.tel+' 로 전화 주세요.';
     err.style.color='var(--warn)';
     console.error('lead submit failed:', e.message);

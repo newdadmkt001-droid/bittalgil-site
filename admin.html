@@ -102,6 +102,18 @@ input.memo{width:100%;min-width:150px;height:32px;padding:0 10px;border:1px soli
   border-radius:var(--r-sm);font-size:13px}
 .empty{padding:48px 20px;text-align:center;color:var(--t3);font-weight:600}
 
+/* ── 여정 ── */
+.jcard{background:var(--card);border-radius:var(--r);padding:14px 18px}
+.jhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.jhead b{font-size:15px;font-weight:800;color:var(--t1)}
+.jhead .meta{font-size:12.5px;color:var(--t3);font-weight:600}
+.jhead .sp{flex:1}
+.jline{margin-top:10px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;
+  font-size:12.5px;color:var(--t3);line-height:1.5}
+.jitem{background:#F2F4F6;border-radius:6px;padding:3px 9px;font-weight:600}
+.jitem b{color:var(--t2);font-weight:800}
+.jarrow{font-style:normal;color:var(--t4)}
+
 /* ── 칼럼 편집 ── */
 .plist{margin-top:14px;display:grid;gap:10px}
 .prow{background:var(--card);border-radius:var(--r);padding:14px 18px;display:flex;
@@ -168,7 +180,7 @@ function renderLogin(msg){
 }
 
 /* ══ 셸 ══ */
-let TAB='stats', RANGE=7, LEADS=[], POSTS=[], EDIT=null;
+let TAB='stats', RANGE=7, LEADS=[], POSTS=[], EDIT=null, EVENTS=[], SPEND=[], JMODE='all';
 
 function shell(inner){
   app.innerHTML=`<header class="top"><div class="in">
@@ -182,6 +194,9 @@ function shell(inner){
   <div class="wrap">
     <div class="tabs">
       <button data-t="stats" class="${TAB==='stats'?'on':''}">집계</button>
+      <button data-t="funnel" class="${TAB==='funnel'?'on':''}">퍼널</button>
+      <button data-t="journey" class="${TAB==='journey'?'on':''}">여정</button>
+      <button data-t="ads" class="${TAB==='ads'?'on':''}">광고비</button>
       <button data-t="leads" class="${TAB==='leads'?'on':''}">리드</button>
       <button data-t="posts" class="${TAB==='posts'?'on':''}">칼럼</button>
     </div>
@@ -190,6 +205,55 @@ function shell(inner){
   $('#out').onclick=async()=>{await sb.auth.signOut();renderLogin();};
   app.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{TAB=b.dataset.t;draw();});
   sb.auth.getUser().then(({data})=>{const w=$('#who');if(w&&data.user)w.textContent=data.user.email;});
+}
+
+/* ══ 세션 ══
+   이벤트를 세션으로 접어 '어디까지 갔는가'를 만든다.
+   신용톡톡 어드민의 퍼널·여정이 전부 이 위에 선다. */
+const evInRange=()=>{const d=new Date();d.setDate(d.getDate()-RANGE);
+  return EVENTS.filter(e=>RANGE===0||new Date(e.created_at)>=d);};
+
+/* 퍼널 단계 — 뒤에 있을수록 깊이 들어간 것 */
+const STAGES=[
+  ['view',   '사이트 진입'],
+  ['q1',     '진단 시작'],
+  ['q5',     '5번 문항 통과'],
+  ['q9',     '9문항 완주'],
+  ['calc',   '계산 화면'],
+  ['gate',   '연락처 입력칸'],
+  ['submit', '리드 제출'],
+];
+
+function sessions(){
+  const m=new Map();
+  evInRange().forEach(e=>{
+    let x=m.get(e.session_id);
+    if(!x){x={id:e.session_id,first:e.created_at,last:e.created_at,items:[],
+      utm:e.utm_source||'직접',camp:e.utm_campaign||'없음',device:e.device||'미상',
+      ref:e.referrer||'',maxQ:0,depth:0,scroll:0};m.set(e.session_id,x);}
+    x.items.push(e);
+    if(e.created_at>x.last)x.last=e.created_at;
+    if(e.event==='q_enter'&&e.step>x.maxQ)x.maxQ=e.step;
+    if(e.event==='scroll'&&e.step>x.scroll)x.scroll=e.step;
+  });
+  const idx=k=>STAGES.findIndex(s=>s[0]===k);
+  m.forEach(x=>{
+    let d=0;
+    x.items.forEach(e=>{
+      if(e.event==='view')d=Math.max(d,idx('view'));
+      if(e.event==='q_enter'){ d=Math.max(d,idx('q1'));
+        if(e.step>=5)d=Math.max(d,idx('q5'));
+        if(e.step>=9)d=Math.max(d,idx('q9')); }
+      if(e.event==='calc')d=Math.max(d,idx('calc'));
+      if(e.event==='gate')d=Math.max(d,idx('gate'));
+      if(e.event==='submit')d=Math.max(d,idx('submit'));
+    });
+    x.depth=d;
+    x.sec=Math.max(0,Math.round((new Date(x.last)-new Date(x.first))/1000));
+    x.tel=x.items.some(e=>e.event==='cta_tel');
+    x.kakao=x.items.some(e=>e.event==='cta_kakao');
+  });
+  return [...m.values()].sort((a,b)=>new Date(b.first)-new Date(a.first));
 }
 
 /* ══ 집계 ══ */
@@ -213,12 +277,22 @@ function statsHTML(){
       <div class="t"><i style="width:${(v/max*100).toFixed(1)}%"></i><em>${esc(k)}</em></div>
       <span class="n">${v}</span></div>`).join('')
       :'<p class="hint">데이터 없음</p>';};
+  const S=sessions();
+  const started=S.filter(x=>x.depth>=1).length;
+  const done=S.filter(x=>x.depth>=3).length;
+  const conv=S.length?(n/S.length*100):0;
   return `
   <div class="range">
     ${[[1,'오늘'],[7,'7일'],[30,'30일'],[90,'90일'],[0,'전체']].map(([v,l])=>
       `<button data-r="${v}" class="${RANGE===v?'on':''}">${l}</button>`).join('')}
   </div>
   <div class="kpis">
+    <div class="kpi"><b>${S.length}</b><span>방문 세션</span></div>
+    <div class="kpi"><b>${started}</b><span>진단 시작</span></div>
+    <div class="kpi"><b>${done}</b><span>9문항 완주</span></div>
+    <div class="kpi"><b>${conv.toFixed(1)}<small style="font-size:.55em">%</small></b><span>방문 대비 리드</span></div>
+  </div>
+  <div class="kpis" style="margin-top:10px">
     <div class="kpi"><b>${n}</b><span>리드</span></div>
     <div class="kpi"><b>${n?Math.round(elig/n*100):0}<small style="font-size:.55em">%</small></b><span>회생 요건 충족</span></div>
     <div class="kpi"><b>${avgCut}<small style="font-size:.55em">%</small></b><span>평균 감액률</span></div>
@@ -229,6 +303,145 @@ function statsHTML(){
     <div class="panel"><h3>기기</h3>${bars(group('device','미상'))}</div>
     <div class="panel"><h3>캠페인 (utm_campaign)</h3>${bars(group('utm_campaign','없음'))}</div>
     <div class="panel"><h3>처리 상태</h3>${bars(group('status','new'))}</div>
+  </div>`;
+}
+
+/* ══ 퍼널 ══ */
+function funnelHTML(){
+  const S=sessions();
+  const top=S.length||1;
+  const rows=STAGES.map((st,i)=>{
+    const c=S.filter(x=>x.depth>=i).length;
+    return {label:st[1],count:c,overall:c/top*100};
+  });
+  const qDrop=[];
+  for(let q=1;q<=9;q++){
+    const enter=S.filter(x=>x.maxQ>=q).length;
+    const next=S.filter(x=>x.maxQ>=q+1).length;
+    qDrop.push({q,enter,leave:enter-next});
+  }
+  const maxLeave=Math.max(1,...qDrop.map(d=>d.leave));
+  return `
+  <div class="range">
+    ${[[1,'오늘'],[7,'7일'],[30,'30일'],[90,'90일'],[0,'전체']].map(([v,l])=>
+      `<button data-r="${v}" class="${RANGE===v?'on':''}">${l}</button>`).join('')}
+  </div>
+  <div class="panel" style="margin-top:14px"><h3>단계별 도달 · 이탈</h3>
+    ${rows.map((r,i)=>{
+      const prev=i?rows[i-1].count:r.count;
+      const drop=prev-r.count;
+      return `<div class="bar">
+        <div class="t" style="height:34px"><i style="width:${r.overall.toFixed(1)}%"></i>
+          <em>${r.label} · ${r.count}명 (${r.overall.toFixed(0)}%)</em></div>
+        <span class="n" style="color:${drop>0?'var(--warn)':'var(--t4)'}">${i&&drop>0?'−'+drop:''}</span>
+      </div>`}).join('')}
+    <p class="hint">막대는 전체 방문 대비 비율입니다. 오른쪽 숫자는 직전 단계에서 빠져나간 사람입니다.</p>
+  </div>
+  <div class="panel" style="margin-top:14px"><h3>문항별 이탈</h3>
+    ${qDrop.map(d=>`<div class="bar">
+      <div class="t"><i style="width:${(d.leave/maxLeave*100).toFixed(1)}%;background:#E5484D;opacity:.8"></i>
+        <em>${d.q}번 문항 · 진입 ${d.enter}명</em></div>
+      <span class="n">${d.leave?'−'+d.leave:'0'}</span></div>`).join('')}
+    <p class="hint">가장 긴 막대가 가장 많이 포기하는 문항입니다. 문항을 고칠 근거가 여기서 나옵니다.</p>
+  </div>`;
+}
+
+/* ══ 여정 ══ */
+const EVKO={view:'화면 열람',q_enter:'문항 진입',q_answer:'답변',calc:'계산 중',
+  gate:'연락처 입력칸',submit:'리드 제출',submit_fail:'전송 실패',
+  hero_click:'히어로 데모 클릭',cta_tel:'전화 걸기',cta_kakao:'카톡 열기',
+  cta_start:'진단 시작 버튼',scroll:'스크롤'};
+
+function journeyHTML(){
+  const S=sessions().filter(x=>
+    JMODE==='all'?true:
+    JMODE==='lead'?x.depth>=6:
+    JMODE==='drop'?(x.depth>=1&&x.depth<6):
+    x.depth===0);
+  const chips=[['all','전체'],['lead','제출까지'],['drop','진단 중 이탈'],['bounce','진입만']];
+  return `
+  <div class="range">
+    ${[[1,'오늘'],[7,'7일'],[30,'30일'],[90,'90일'],[0,'전체']].map(([v,l])=>
+      `<button data-r="${v}" class="${RANGE===v?'on':''}">${l}</button>`).join('')}
+  </div>
+  <div class="range" style="margin-top:8px">
+    ${chips.map(([v,l])=>`<button data-j="${v}" class="${JMODE===v?'on':''}">${l}</button>`).join('')}
+  </div>
+  ${S.length?`<div class="plist">${S.slice(0,60).map(x=>{
+    const stage=STAGES[x.depth]?STAGES[x.depth][1]:'진입';
+    return `<div class="jcard">
+      <div class="jhead">
+        <b>${stage}</b>
+        <span class="meta">${new Date(x.first).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}
+          · ${x.sec}초 · ${esc(x.utm)} · ${esc(x.device)}${x.scroll?' · 스크롤 '+x.scroll+'%':''}</span>
+        <span class="sp"></span>
+        ${x.tel?'<span class="tag y">전화</span>':''}${x.kakao?'<span class="tag y">카톡</span>':''}
+      </div>
+      <div class="jline">${x.items.slice(0,26).map(e=>{
+        const t=EVKO[e.event]||e.event;
+        const lab=e.event==='q_answer'?`${e.step}번 → ${esc(e.label||'')}`
+          :e.event==='q_enter'?`${e.step}번 문항`
+          :e.event==='scroll'?`${e.step}%`
+          :esc(e.label||'');
+        return `<span class="jitem"><b>${t}</b>${lab?' '+lab:''}</span>`;
+      }).join('<i class="jarrow">→</i>')}</div>
+    </div>`}).join('')}</div>`
+   :'<p class="empty">해당 조건의 세션이 없습니다</p>'}`;
+}
+
+/* ══ 광고비 ══ */
+function adsHTML(){
+  const S=sessions();
+  const bySrc={};
+  S.forEach(x=>{const k=x.utm;(bySrc[k]=bySrc[k]||{visit:0,lead:0}).visit++;});
+  inRange().forEach(l=>{const k=l.utm_source||'직접';(bySrc[k]=bySrc[k]||{visit:0,lead:0}).lead++;});
+  const since=new Date(); since.setDate(since.getDate()-RANGE);
+  const spendBy={};
+  SPEND.forEach(r=>{ if(RANGE===0||new Date(r.day)>=since)spendBy[r.source]=(spendBy[r.source]||0)+r.spend; });
+  const keys=[...new Set([...Object.keys(bySrc),...Object.keys(spendBy)])];
+  const today=new Date().toISOString().slice(0,10);
+  return `
+  <div class="range">
+    ${[[1,'오늘'],[7,'7일'],[30,'30일'],[90,'90일'],[0,'전체']].map(([v,l])=>
+      `<button data-r="${v}" class="${RANGE===v?'on':''}">${l}</button>`).join('')}
+  </div>
+  <div class="tblwrap" style="margin-top:14px">${keys.length?`<table>
+    <thead><tr><th>유입원</th><th>방문</th><th>리드</th><th>전환율</th><th>광고비</th><th>CPA</th></tr></thead>
+    <tbody>${keys.map(k=>{const v=bySrc[k]||{visit:0,lead:0},sp=spendBy[k]||0;
+      return `<tr>
+        <td><span class="nm">${esc(k)}</span></td>
+        <td class="num">${v.visit}</td>
+        <td class="num">${v.lead}</td>
+        <td class="num">${v.visit?(v.lead/v.visit*100).toFixed(1)+'%':'-'}</td>
+        <td class="num">${sp?won(sp)+'원':'-'}</td>
+        <td class="num">${sp&&v.lead?won(Math.round(sp/v.lead))+'원':'-'}</td>
+      </tr>`}).join('')}</tbody></table>`:'<p class="empty">데이터가 없습니다</p>'}</div>
+
+  <div class="panel" style="margin-top:14px"><h3>광고비 입력</h3>
+    <div class="tools" style="margin-top:10px">
+      <input id="sp_day" type="date" value="${today}">
+      <input id="sp_src" placeholder="유입원 (utm_source)" style="min-width:170px">
+      <input id="sp_amt" type="number" placeholder="금액(원)" style="min-width:130px">
+      <button id="sp_save">저장</button>
+    </div>
+    <p class="hint">같은 날짜·유입원을 다시 저장하면 덮어씁니다. 유입원은 광고 링크의 utm_source 와 같게 쓰세요.</p>
+    ${SPEND.length?`<div class="tblwrap" style="margin-top:12px"><table style="min-width:420px">
+      <thead><tr><th>날짜</th><th>유입원</th><th>금액</th><th></th></tr></thead>
+      <tbody>${SPEND.slice(0,30).map(r=>`<tr>
+        <td class="num">${r.day}</td><td>${esc(r.source)}</td>
+        <td class="num">${won(r.spend)}원</td>
+        <td><button class="sp_del" data-id="${r.id}" style="height:28px;padding:0 10px;border:1px solid var(--line2);border-radius:6px;background:#fff;cursor:pointer">삭제</button></td>
+      </tr>`).join('')}</tbody></table></div>`:''}
+  </div>
+
+  <div class="panel" style="margin-top:14px"><h3>광고 링크 만들기</h3>
+    <div class="tools" style="margin-top:10px">
+      <input id="u_src" placeholder="유입원 (naver, meta …)" style="min-width:170px">
+      <input id="u_med" placeholder="매체 (cpc, sns …)" style="min-width:150px">
+      <input id="u_camp" placeholder="캠페인" style="min-width:150px">
+      <button id="u_make">만들기</button>
+    </div>
+    <p class="hint" id="u_out" style="user-select:all;word-break:break-all">유입원을 넣고 만들기를 누르세요.</p>
   </div>`;
 }
 
@@ -392,16 +605,61 @@ function wirePosts(){
 
 /* ══ 그리기 ══ */
 function draw(){
-  shell(TAB==='stats'?statsHTML():TAB==='leads'?leadsHTML():postsHTML());
-  app.querySelectorAll('.range button').forEach(b=>b.onclick=()=>{RANGE=+b.dataset.r;draw();});
+  const view={stats:statsHTML,funnel:funnelHTML,journey:journeyHTML,
+              ads:adsHTML,leads:leadsHTML,posts:postsHTML}[TAB]||statsHTML;
+  shell(view());
+  app.querySelectorAll('.range button[data-r]').forEach(b=>b.onclick=()=>{RANGE=+b.dataset.r;draw();});
+  app.querySelectorAll('.range button[data-j]').forEach(b=>b.onclick=()=>{JMODE=b.dataset.j;draw();});
   if(TAB==='leads')wireLeads();
   if(TAB==='posts')wirePosts();
+  if(TAB==='ads')wireAds();
+}
+
+function wireAds(){
+  const save=$('#sp_save');
+  if(save)save.onclick=async()=>{
+    const day=$('#sp_day').value, source=$('#sp_src').value.trim(), spend=+$('#sp_amt').value||0;
+    if(!day||!source){toast('날짜와 유입원을 넣어 주세요');return;}
+    const {error}=await sb.from('bittalgil_ad_spend')
+      .upsert({day,source,spend},{onConflict:'day,source'});
+    if(error){toast('저장 실패: '+error.message);return;}
+    toast('저장했습니다'); await loadSpend(); draw();
+  };
+  app.querySelectorAll('.sp_del').forEach(b=>b.onclick=async()=>{
+    const {error}=await sb.from('bittalgil_ad_spend').delete().eq('id',b.dataset.id);
+    if(error){toast('삭제 실패');return;}
+    await loadSpend(); draw();
+  });
+  const mk=$('#u_make');
+  if(mk)mk.onclick=()=>{
+    const q=new URLSearchParams();
+    const src=$('#u_src').value.trim(); if(!src){toast('유입원을 넣어 주세요');return;}
+    q.set('utm_source',src);
+    if($('#u_med').value.trim())q.set('utm_medium',$('#u_med').value.trim());
+    if($('#u_camp').value.trim())q.set('utm_campaign',$('#u_camp').value.trim());
+    /* 쿼리는 해시보다 앞에 와야 한다 — 뒤에 붙이면 라우터가 경로로 읽는다 */
+    const url='https://bittalgil.com/?'+q.toString();
+    $('#u_out').textContent=url;
+    navigator.clipboard&&navigator.clipboard.writeText(url).then(()=>toast('복사했습니다'),()=>{});
+  };
 }
 
 async function loadLeads(){
   const {data,error}=await sb.from('bittalgil_leads').select('*').order('created_at',{ascending:false});
   if(error){toast('리드를 못 읽었습니다: '+error.message);return;}
   LEADS=data||[];
+}
+/* 이벤트는 금방 수만 건이 된다. 화면이 보는 만큼만 가져온다 */
+async function loadEvents(){
+  const since=new Date(); since.setDate(since.getDate()-90);
+  const {data,error}=await sb.from('bittalgil_events').select('*')
+    .gte('created_at',since.toISOString()).order('created_at').limit(20000);
+  if(error){toast('이벤트를 못 읽었습니다: '+error.message);return;}
+  EVENTS=data||[];
+}
+async function loadSpend(){
+  const {data,error}=await sb.from('bittalgil_ad_spend').select('*').order('day',{ascending:false});
+  if(error)return; SPEND=data||[];
 }
 async function loadPosts(){
   const {data,error}=await sb.from('bittalgil_posts').select('*').order('sort');
@@ -413,7 +671,7 @@ async function boot(){
   const {data}=await sb.auth.getSession();
   if(!data.session){renderLogin();return;}
   app.innerHTML='<div class="login"><div class="box"><h1>불러오는 중…</h1></div></div>';
-  await Promise.all([loadLeads(),loadPosts()]);
+  await Promise.all([loadLeads(),loadPosts(),loadEvents(),loadSpend()]);
   draw();
 }
 boot();
