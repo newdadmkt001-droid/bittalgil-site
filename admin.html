@@ -1,0 +1,418 @@
+<!-- 빚탈길 어드민.
+     정적 호스팅(GitHub Pages)이라 서버가 없다. 신용톡톡처럼 서버 API 로 비밀번호를
+     검사할 수 없으므로 Supabase Auth 로 로그인하고 RLS 가 권한을 판정한다.
+     anon 키는 공개되지만 anon 에는 리드 SELECT 정책이 없어서 조회가 0행이다. -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>빚탈길 어드민</title>
+<style>
+:root{
+  --bg:#F2F4F6; --card:#FFFFFF; --line:rgba(0,0,0,.08); --line2:rgba(0,0,0,.14);
+  --t1:#191F28; --t2:#333D4B; --t3:#646B74; --t4:#8B95A1;
+  --brand:#3182F6; --brand-ink:#286BCA; --face:#0B4FA8;
+  --ok:#166534; --okbg:rgba(21,128,61,.09);
+  --warn:#B91C1C; --warnbg:rgba(185,28,28,.08);
+  --r:10px; --r-sm:6px;
+}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--t1);
+  font-family:'Pretendard Variable',Pretendard,-apple-system,'Segoe UI','Malgun Gothic',sans-serif;
+  font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;word-break:keep-all}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+a{color:var(--brand-ink)}
+
+.wrap{max-width:1240px;margin:0 auto;padding:0 20px 80px}
+@media (min-width:900px){.wrap{padding:0 32px 96px}}
+
+/* ── 로그인 ── */
+.login{min-height:100svh;display:flex;align-items:center;justify-content:center;padding:24px}
+.login .box{width:100%;max-width:360px;background:var(--card);border-radius:16px;
+  padding:32px 28px;box-shadow:0 1px 2px rgba(25,31,40,.05),0 12px 32px rgba(25,31,40,.07)}
+.login h1{font-size:20px;font-weight:800;letter-spacing:-.03em}
+.login p{margin-top:6px;font-size:13.5px;color:var(--t3)}
+.login label{display:block;margin-top:16px;font-size:13px;font-weight:700;color:var(--t3)}
+.login input{width:100%;margin-top:6px;height:46px;padding:0 14px;border:1.5px solid var(--line2);
+  border-radius:var(--r);background:#fff;font-weight:600}
+.login input:focus{outline:2px solid var(--brand);border-color:transparent}
+.login button{width:100%;margin-top:20px;height:48px;border:0;border-radius:var(--r);
+  background:var(--t1);color:#fff;font-weight:700;cursor:pointer}
+.login button[disabled]{opacity:.4;pointer-events:none}
+.login .err{margin-top:12px;font-size:13.5px;font-weight:600;color:var(--warn)}
+
+/* ── 상단 ── */
+.top{background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+.top .in{max-width:1240px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:14px}
+@media (min-width:900px){.top .in{padding:12px 32px}}
+.top .mk{display:flex;align-items:center;gap:9px;font-size:17px;font-weight:800;letter-spacing:-.05em}
+.top .sp{flex:1}
+.top .who{font-size:13px;color:var(--t3);font-weight:600}
+.top button{height:36px;padding:0 14px;border:1px solid var(--line2);border-radius:var(--r-sm);
+  background:#fff;font-size:13.5px;font-weight:700;cursor:pointer}
+
+.tabs{display:flex;gap:4px;margin-top:20px;border-bottom:1px solid var(--line)}
+.tabs button{height:44px;padding:0 16px;border:0;border-bottom:2px solid transparent;
+  background:none;font-size:15px;font-weight:700;color:var(--t3);cursor:pointer}
+.tabs button.on{color:var(--t1);border-bottom-color:var(--t1)}
+
+/* ── 집계 ── */
+.range{display:flex;gap:6px;margin-top:18px;flex-wrap:wrap}
+.range button{height:34px;padding:0 13px;border:1px solid var(--line2);border-radius:999px;
+  background:#fff;font-size:13.5px;font-weight:700;color:var(--t2);cursor:pointer}
+.range button.on{background:var(--t1);color:#fff;border-color:var(--t1)}
+.kpis{margin-top:14px;display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media (min-width:760px){.kpis{grid-template-columns:repeat(4,1fr)}}
+.kpi{background:var(--card);border-radius:var(--r);padding:16px 18px}
+.kpi b{display:block;font-size:26px;font-weight:800;letter-spacing:-.04em;
+  font-variant-numeric:tabular-nums}
+.kpi span{display:block;margin-top:2px;font-size:13px;font-weight:600;color:var(--t3)}
+.split{margin-top:18px;display:grid;gap:14px}
+@media (min-width:900px){.split{grid-template-columns:1fr 1fr}}
+.panel{background:var(--card);border-radius:var(--r);padding:18px 20px}
+.panel h3{font-size:14px;font-weight:800;color:var(--t3);letter-spacing:.01em}
+.bar{margin-top:12px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;
+  font-size:14px;font-weight:600}
+.bar .n{font-variant-numeric:tabular-nums;color:var(--t2)}
+.bar .t{position:relative;height:26px;background:#EEF1F4;border-radius:var(--r-sm);overflow:hidden}
+.bar .t i{position:absolute;inset:0 auto 0 0;background:var(--brand);opacity:.85}
+.bar .t em{position:absolute;left:10px;top:50%;transform:translateY(-50%);
+  font-style:normal;font-size:13px;font-weight:700;color:var(--t1)}
+
+/* ── 표 ── */
+.tools{margin-top:18px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tools input,.tools select{height:38px;padding:0 12px;border:1px solid var(--line2);
+  border-radius:var(--r-sm);background:#fff;font-weight:600}
+.tools .sp{flex:1}
+.tools button{height:38px;padding:0 14px;border:1px solid var(--line2);border-radius:var(--r-sm);
+  background:#fff;font-weight:700;cursor:pointer}
+.tblwrap{margin-top:12px;background:var(--card);border-radius:var(--r);overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:920px;font-size:14px}
+th{text-align:left;font-size:12.5px;font-weight:800;color:var(--t3);white-space:nowrap;
+  padding:12px 14px;border-bottom:1px solid var(--line)}
+td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--t2)}
+tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+td .nm{font-weight:700;color:var(--t1)}
+.tag{display:inline-block;padding:3px 9px;border-radius:var(--r-sm);font-size:12.5px;font-weight:700}
+.tag.y{color:var(--ok);background:var(--okbg)}
+.tag.n{color:var(--warn);background:var(--warnbg)}
+select.st{height:32px;border:1px solid var(--line2);border-radius:var(--r-sm);
+  background:#fff;font-size:13px;font-weight:700;padding:0 8px}
+input.memo{width:100%;min-width:150px;height:32px;padding:0 10px;border:1px solid var(--line2);
+  border-radius:var(--r-sm);font-size:13px}
+.empty{padding:48px 20px;text-align:center;color:var(--t3);font-weight:600}
+
+/* ── 칼럼 편집 ── */
+.plist{margin-top:14px;display:grid;gap:10px}
+.prow{background:var(--card);border-radius:var(--r);padding:14px 18px;display:flex;
+  align-items:center;gap:12px;flex-wrap:wrap}
+.prow b{font-size:15px;font-weight:700;color:var(--t1)}
+.prow .meta{font-size:13px;color:var(--t3);font-weight:600}
+.prow .sp{flex:1}
+.prow button{height:34px;padding:0 12px;border:1px solid var(--line2);border-radius:var(--r-sm);
+  background:#fff;font-weight:700;cursor:pointer;font-size:13.5px}
+.prow button.pub{background:var(--t1);color:#fff;border-color:var(--t1)}
+.editor{margin-top:14px;background:var(--card);border-radius:var(--r);padding:20px}
+.editor label{display:block;margin-top:14px;font-size:13px;font-weight:800;color:var(--t3)}
+.editor input,.editor textarea,.editor select{width:100%;margin-top:6px;padding:10px 12px;
+  border:1.5px solid var(--line2);border-radius:var(--r-sm);background:#fff;font-weight:600}
+.editor textarea{min-height:90px;resize:vertical;line-height:1.6}
+.editor .row{display:grid;gap:12px}
+@media (min-width:700px){.editor .row{grid-template-columns:1fr 1fr 120px}}
+.editor .acts{margin-top:20px;display:flex;gap:8px;flex-wrap:wrap}
+.editor .acts button{height:44px;padding:0 18px;border:1px solid var(--line2);
+  border-radius:var(--r-sm);background:#fff;font-weight:700;cursor:pointer}
+.editor .acts button.go{background:var(--t1);color:#fff;border-color:var(--t1)}
+.editor .acts button.danger{color:var(--warn);border-color:rgba(185,28,28,.35)}
+.hint{margin-top:6px;font-size:12.5px;color:var(--t4);font-weight:600}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:60;
+  background:var(--t1);color:#fff;padding:12px 20px;border-radius:999px;font-weight:700;
+  font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.on{opacity:1}
+</style>
+
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const SB_URL='https://eapompomalqhlkzbkdvc.supabase.co', SB_KEY='sb_publishable_aazxQRK3-gSIRGJ6zHND9w_lE-9Ly9t';
+const sb=window.supabase.createClient(SB_URL,SB_KEY);
+const $=s=>document.querySelector(s), app=$('#app');
+const won=n=>Number(n||0).toLocaleString('ko-KR');
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let toastT;
+const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');
+  clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),1900);};
+
+/* ══ 로그인 ══ */
+function renderLogin(msg){
+  app.innerHTML=`<div class="login"><form class="box" id="lf">
+    <h1>빚탈길 어드민</h1>
+    <p>등록된 계정만 들어올 수 있습니다.</p>
+    <label>이메일<input type="email" name="email" autocomplete="username" required></label>
+    <label>비밀번호<input type="password" name="pw" autocomplete="current-password" required></label>
+    <button type="submit">로그인</button>
+    ${msg?`<p class="err">${esc(msg)}</p>`:''}
+  </form></div>`;
+  $('#lf').onsubmit=async e=>{
+    e.preventDefault();
+    const b=e.target.querySelector('button'); b.disabled=true; b.textContent='확인 중…';
+    const {error}=await sb.auth.signInWithPassword({
+      email:e.target.email.value.trim(), password:e.target.pw.value});
+    if(error){renderLogin('이메일 또는 비밀번호가 맞지 않습니다');return;}
+    boot();
+  };
+}
+
+/* ══ 셸 ══ */
+let TAB='stats', RANGE=7, LEADS=[], POSTS=[], EDIT=null;
+
+function shell(inner){
+  app.innerHTML=`<header class="top"><div class="in">
+    <span class="mk"><svg width="22" height="16" viewBox="0 0 27 19" fill="none">
+      <path d="M1.6 17H9V10.2H16.4V3.4H21" stroke="#191F28" stroke-width="2.9" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M21 3.4H25.4" stroke="#3182F6" stroke-width="2.9" stroke-linecap="round"/></svg>어드민</span>
+    <span class="sp"></span>
+    <span class="who" id="who"></span>
+    <button id="out">로그아웃</button>
+  </div></header>
+  <div class="wrap">
+    <div class="tabs">
+      <button data-t="stats" class="${TAB==='stats'?'on':''}">집계</button>
+      <button data-t="leads" class="${TAB==='leads'?'on':''}">리드</button>
+      <button data-t="posts" class="${TAB==='posts'?'on':''}">칼럼</button>
+    </div>
+    <div id="body">${inner}</div>
+  </div>`;
+  $('#out').onclick=async()=>{await sb.auth.signOut();renderLogin();};
+  app.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{TAB=b.dataset.t;draw();});
+  sb.auth.getUser().then(({data})=>{const w=$('#who');if(w&&data.user)w.textContent=data.user.email;});
+}
+
+/* ══ 집계 ══ */
+const inRange=r=>{const d=new Date();d.setDate(d.getDate()-RANGE);
+  return LEADS.filter(l=>RANGE===0||new Date(l.created_at)>=d);};
+
+function statsHTML(){
+  const rows=inRange();
+  const n=rows.length;
+  const elig=rows.filter(r=>r.eligible).length;
+  const cuts=rows.map(r=>r.calc&&r.calc.reductionPercent).filter(v=>typeof v==='number');
+  const avgCut=cuts.length?Math.round(cuts.reduce((a,b)=>a+b,0)/cuts.length):0;
+  const pays=rows.map(r=>r.calc&&r.calc.monthlyPayment).filter(v=>typeof v==='number');
+  const avgPay=pays.length?Math.round(pays.reduce((a,b)=>a+b,0)/pays.length):0;
+  const group=(key,fallback)=>{
+    const m={};rows.forEach(r=>{const k=r[key]||fallback;m[k]=(m[k]||0)+1;});
+    return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  };
+  const bars=(list)=>{const max=Math.max(1,...list.map(x=>x[1]));
+    return list.length?list.map(([k,v])=>`<div class="bar">
+      <div class="t"><i style="width:${(v/max*100).toFixed(1)}%"></i><em>${esc(k)}</em></div>
+      <span class="n">${v}</span></div>`).join('')
+      :'<p class="hint">데이터 없음</p>';};
+  return `
+  <div class="range">
+    ${[[1,'오늘'],[7,'7일'],[30,'30일'],[90,'90일'],[0,'전체']].map(([v,l])=>
+      `<button data-r="${v}" class="${RANGE===v?'on':''}">${l}</button>`).join('')}
+  </div>
+  <div class="kpis">
+    <div class="kpi"><b>${n}</b><span>리드</span></div>
+    <div class="kpi"><b>${n?Math.round(elig/n*100):0}<small style="font-size:.55em">%</small></b><span>회생 요건 충족</span></div>
+    <div class="kpi"><b>${avgCut}<small style="font-size:.55em">%</small></b><span>평균 감액률</span></div>
+    <div class="kpi"><b>${won(avgPay)}</b><span>평균 월 변제금</span></div>
+  </div>
+  <div class="split">
+    <div class="panel"><h3>유입원 (utm_source)</h3>${bars(group('utm_source','직접·미표기'))}</div>
+    <div class="panel"><h3>기기</h3>${bars(group('device','미상'))}</div>
+    <div class="panel"><h3>캠페인 (utm_campaign)</h3>${bars(group('utm_campaign','없음'))}</div>
+    <div class="panel"><h3>처리 상태</h3>${bars(group('status','new'))}</div>
+  </div>`;
+}
+
+/* ══ 리드 ══ */
+const ST=[['new','신규'],['contacted','통화함'],['consulted','상담완료'],['closed','종료'],['invalid','무효']];
+let Q='', FILTER='';
+
+function leadsHTML(){
+  const q=Q.trim();
+  const rows=inRange().filter(r=>
+    (!FILTER||r.status===FILTER) &&
+    (!q||(r.name||'').includes(q)||(r.phone||'').includes(q.replace(/-/g,''))));
+  return `
+  <div class="range">
+    ${[[1,'오늘'],[7,'7일'],[30,'30일'],[90,'90일'],[0,'전체']].map(([v,l])=>
+      `<button data-r="${v}" class="${RANGE===v?'on':''}">${l}</button>`).join('')}
+  </div>
+  <div class="tools">
+    <input id="q" placeholder="이름·연락처 검색" value="${esc(Q)}">
+    <select id="fs"><option value="">전체 상태</option>
+      ${ST.map(([v,l])=>`<option value="${v}"${FILTER===v?' selected':''}>${l}</option>`).join('')}</select>
+    <span class="sp"></span>
+    <button id="csv">CSV 내려받기 (${rows.length}건)</button>
+  </div>
+  <div class="tblwrap">${rows.length?`<table>
+    <thead><tr><th>접수</th><th>이름</th><th>연락처</th><th>경로</th><th>채무</th>
+      <th>월 변제금</th><th>감액</th><th>요건</th><th>유입</th><th>상태</th><th>메모</th></tr></thead>
+    <tbody>${rows.map(r=>{const c=r.calc||{};return `<tr data-id="${r.id}">
+      <td class="num">${new Date(r.created_at).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</td>
+      <td><span class="nm">${esc(r.name)}</span></td>
+      <td class="num"><a href="tel:${esc(r.phone)}">${esc(r.phone)}</a></td>
+      <td>${r.form==='result'?'진단 완주':'상담 신청'}</td>
+      <td class="num">${c.originalDebt?won(c.originalDebt)+'원':'-'}</td>
+      <td class="num">${c.monthlyPayment?won(c.monthlyPayment)+'원':'-'}</td>
+      <td class="num">${typeof c.reductionPercent==='number'?c.reductionPercent+'%':'-'}</td>
+      <td>${r.eligible==null?'-':r.eligible?'<span class="tag y">충족</span>':'<span class="tag n">확인</span>'}</td>
+      <td>${esc(r.utm_source||'직접')}</td>
+      <td><select class="st" data-f="status">${ST.map(([v,l])=>
+        `<option value="${v}"${(r.status||'new')===v?' selected':''}>${l}</option>`).join('')}</select></td>
+      <td><input class="memo" data-f="memo" value="${esc(r.memo||'')}" placeholder="메모"></td>
+    </tr>`}).join('')}</tbody></table>`:'<p class="empty">해당 조건의 리드가 없습니다</p>'}</div>`;
+}
+
+function wireLeads(){
+  const q=$('#q'); if(q)q.oninput=()=>{Q=q.value;const p=q.selectionStart;draw();
+    const n=$('#q');if(n){n.focus();n.setSelectionRange(p,p);}};
+  const fs=$('#fs'); if(fs)fs.onchange=()=>{FILTER=fs.value;draw();};
+  const csv=$('#csv'); if(csv)csv.onclick=exportCSV;
+  app.querySelectorAll('tr[data-id]').forEach(tr=>{
+    const id=tr.dataset.id;
+    tr.querySelectorAll('[data-f]').forEach(el=>{
+      const ev=el.tagName==='SELECT'?'change':'change';
+      el.addEventListener(ev,async()=>{
+        const patch={[el.dataset.f]:el.value};
+        const {error}=await sb.from('bittalgil_leads').update(patch).eq('id',id);
+        if(error){toast('저장 실패: '+error.message);return;}
+        const row=LEADS.find(l=>l.id===id); if(row)Object.assign(row,patch);
+        toast('저장했습니다');
+      });
+    });
+  });
+}
+
+function exportCSV(){
+  const rows=inRange();
+  const head=['접수','이름','연락처','경로','채무','월변제금','감액률','요건','유입원','캠페인','기기','상태','메모'];
+  const body=rows.map(r=>{const c=r.calc||{};return [
+    new Date(r.created_at).toLocaleString('ko-KR'), r.name, r.phone,
+    r.form==='result'?'진단 완주':'상담 신청',
+    c.originalDebt||'', c.monthlyPayment||'', c.reductionPercent||'',
+    r.eligible==null?'':r.eligible?'충족':'확인필요',
+    r.utm_source||'', r.utm_campaign||'', r.device||'', r.status||'new', r.memo||''
+  ]});
+  const csv=[head,...body].map(r=>r.map(v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  /* 엑셀이 UTF-8 을 알아보게 BOM 을 붙인다 — 없으면 한글이 깨진다 */
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`빚탈길_리드_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ══ 칼럼 ══ */
+function postsHTML(){
+  if(EDIT) return editorHTML();
+  return `<div class="tools"><span class="sp"></span><button id="new">새 칼럼</button></div>
+  <div class="plist">${POSTS.length?POSTS.map(p=>`<div class="prow" data-slug="${esc(p.slug)}">
+    <b>${esc(p.title)}</b>
+    <span class="meta">${esc(p.cat)} · ${p.read_min}분 · /${esc(p.slug)}</span>
+    <span class="sp"></span>
+    <span class="tag ${p.published?'y':'n'}">${p.published?'발행':'비공개'}</span>
+    <button data-a="pub" class="${p.published?'':'pub'}">${p.published?'내리기':'발행'}</button>
+    <button data-a="edit">편집</button>
+  </div>`).join(''):'<p class="empty">칼럼이 없습니다</p>'}</div>`;
+}
+
+function editorHTML(){
+  const p=EDIT;
+  const body=(p.body||[]).map(b=>`${b[0]}\n${b[1]}`).join('\n\n');
+  return `<div class="editor">
+    <div class="row">
+      <div><label>제목<input id="e_title" value="${esc(p.title)}"></label></div>
+      <div><label>분류<input id="e_cat" value="${esc(p.cat)}"></label></div>
+      <div><label>읽는 시간<input id="e_read" type="number" min="1" value="${p.read_min}"></label></div>
+    </div>
+    <label>주소(slug)<input id="e_slug" value="${esc(p.slug)}"${p.__new?'':' disabled'}></label>
+    <p class="hint">사이트 주소가 됩니다 — /#/columns/<b>${esc(p.slug)||'주소'}</b>. 발행 뒤에는 바꾸지 않습니다.</p>
+    <label>도입 문단<textarea id="e_lead">${esc(p.lead)}</textarea></label>
+    <label>본문<textarea id="e_body" style="min-height:260px">${esc(body)}</textarea></label>
+    <p class="hint">빈 줄로 단락을 나눕니다. 각 단락의 <b>첫 줄이 소제목</b>, 나머지가 본문입니다.</p>
+    <label>인용 한 줄<input id="e_quote" value="${esc(p.quote||'')}"></label>
+    <div class="acts">
+      <button class="go" id="e_save">저장</button>
+      <button id="e_cancel">취소</button>
+      <span class="sp" style="flex:1"></span>
+      ${p.__new?'':'<button class="danger" id="e_del">삭제</button>'}
+    </div>
+  </div>`;
+}
+
+function wirePosts(){
+  const nb=$('#new');
+  if(nb)nb.onclick=()=>{EDIT={__new:true,slug:'',cat:'제도 해설',title:'',read_min:5,
+    lead:'',body:[],quote:'',published:false,sort:POSTS.length};draw();};
+  app.querySelectorAll('.prow').forEach(row=>{
+    const slug=row.dataset.slug, p=POSTS.find(x=>x.slug===slug);
+    row.querySelector('[data-a="edit"]').onclick=()=>{EDIT={...p};draw();};
+    row.querySelector('[data-a="pub"]').onclick=async()=>{
+      const {error}=await sb.from('bittalgil_posts').update({published:!p.published}).eq('slug',slug);
+      if(error){toast('실패: '+error.message);return;}
+      p.published=!p.published; toast(p.published?'발행했습니다':'내렸습니다'); draw();
+    };
+  });
+  const save=$('#e_save');
+  if(save)save.onclick=async()=>{
+    const slug=$('#e_slug').value.trim();
+    if(!/^[a-z0-9-]{2,}$/.test(slug)){toast('주소는 영문 소문자·숫자·하이픈으로');return;}
+    if(!$('#e_title').value.trim()){toast('제목을 입력해 주세요');return;}
+    /* 빈 줄로 나눈 각 덩어리에서 첫 줄을 소제목으로 뗀다 */
+    const body=$('#e_body').value.split(/\n\s*\n/).map(ch=>{
+      const lines=ch.split('\n').filter(l=>l.trim());
+      if(!lines.length)return null;
+      return [lines[0].trim(), lines.slice(1).join(' ').trim()];
+    }).filter(Boolean);
+    const rec={slug,cat:$('#e_cat').value.trim()||'제도 해설',title:$('#e_title').value.trim(),
+      read_min:+$('#e_read').value||5,lead:$('#e_lead').value.trim(),body,
+      quote:$('#e_quote').value.trim()||null,published:EDIT.published,sort:EDIT.sort||0};
+    const {error}=await sb.from('bittalgil_posts').upsert(rec);
+    if(error){toast('저장 실패: '+error.message);return;}
+    toast('저장했습니다'); EDIT=null; await loadPosts(); draw();
+  };
+  const cancel=$('#e_cancel'); if(cancel)cancel.onclick=()=>{EDIT=null;draw();};
+  const del=$('#e_del');
+  if(del)del.onclick=async()=>{
+    if(!confirm('이 칼럼을 지웁니다. 되돌릴 수 없습니다.'))return;
+    const {error}=await sb.from('bittalgil_posts').delete().eq('slug',EDIT.slug);
+    if(error){toast('삭제 실패: '+error.message);return;}
+    toast('삭제했습니다'); EDIT=null; await loadPosts(); draw();
+  };
+}
+
+/* ══ 그리기 ══ */
+function draw(){
+  shell(TAB==='stats'?statsHTML():TAB==='leads'?leadsHTML():postsHTML());
+  app.querySelectorAll('.range button').forEach(b=>b.onclick=()=>{RANGE=+b.dataset.r;draw();});
+  if(TAB==='leads')wireLeads();
+  if(TAB==='posts')wirePosts();
+}
+
+async function loadLeads(){
+  const {data,error}=await sb.from('bittalgil_leads').select('*').order('created_at',{ascending:false});
+  if(error){toast('리드를 못 읽었습니다: '+error.message);return;}
+  LEADS=data||[];
+}
+async function loadPosts(){
+  const {data,error}=await sb.from('bittalgil_posts').select('*').order('sort');
+  if(error){toast('칼럼을 못 읽었습니다: '+error.message);return;}
+  POSTS=data||[];
+}
+
+async function boot(){
+  const {data}=await sb.auth.getSession();
+  if(!data.session){renderLogin();return;}
+  app.innerHTML='<div class="login"><div class="box"><h1>불러오는 중…</h1></div></div>';
+  await Promise.all([loadLeads(),loadPosts()]);
+  draw();
+}
+boot();
+</script>

@@ -2108,6 +2108,30 @@ async function submitLead(form, payload, next){
   }
 }
 
+/* ══ 칼럼 동기화 ══
+   어드민(/admin.html)에서 고친 글을 사이트가 읽어 온다.
+   번들 POSTS 는 지우지 않는다 — 네트워크가 죽어도 칼럼 화면이 비지 않게
+   초기값으로 남기고, 응답이 오면 그 위에 덮는다. */
+let POSTS_SYNCED=false;
+async function syncPosts(){
+  if(POSTS_SYNCED)return;
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/bittalgil_posts?select=*&published=eq.true&order=sort',
+      {headers:{apikey:SB_KEY, Authorization:'Bearer '+SB_KEY}});
+    if(!r.ok)return;
+    const rows=await r.json();
+    if(!Array.isArray(rows)||!rows.length)return;
+    const next={};
+    rows.forEach(p=>{next[p.slug]={cat:p.cat,t:p.title,read:(p.read_min||5)+'분',
+      lead:p.lead||'',body:Array.isArray(p.body)?p.body:[],quote:p.quote||''};});
+    Object.keys(POSTS).forEach(k=>delete POSTS[k]);
+    Object.assign(POSTS,next);
+    POSTS_SYNCED=true;
+    /* 지금 칼럼 화면을 보고 있으면 다시 그린다 */
+    if(/^#\/columns/.test(location.hash))render();
+  }catch(e){ /* 조용히 번들 내용을 쓴다 */ }
+}
+
 /* ══ FAQ 아코디언 ══ */
 function initFaq(){
   document.querySelectorAll('.faq .q').forEach(b=>b.onclick=()=>b.parentElement.classList.toggle('open'));
@@ -2151,6 +2175,7 @@ function bind(key){
     document.querySelectorAll('[data-seq]').forEach(e=>so.observe(e));}
 
   initHeroDemo(); initFaq();
+  if(key==='/columns'||key==='/')syncPosts();
 
   if(key==='/q'){
     /* 다시 시작하면 1번부터. 리셋이 없으면 9/9 에 멈춰 두 번째 진단이 불가능하다 */
