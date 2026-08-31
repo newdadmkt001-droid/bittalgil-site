@@ -103,6 +103,15 @@ input.memo{width:100%;min-width:150px;height:32px;padding:0 10px;border:1px soli
 .empty{padding:48px 20px;text-align:center;color:var(--t3);font-weight:600}
 
 .kpi span em{font-style:normal;font-weight:800;color:var(--brand-ink)}
+h2.sect{margin:30px 0 0;font-size:17px;font-weight:800;color:var(--t1);letter-spacing:-.02em}
+.top .in{flex-wrap:wrap;row-gap:8px}
+.top .in input[type=date]{height:32px;border:1px solid var(--line2);border-radius:6px;padding:0 8px;font-size:13px}
+.top .in button.pill{border-radius:999px;height:32px;padding:0 12px;font-size:13px}
+.top .in button.pill.on{background:var(--t1);color:#fff;border-color:var(--t1)}
+.top .in button{height:32px;padding:0 11px;font-size:13px}
+.ucp{width:100%;text-align:left;border:0;background:none;cursor:pointer;
+  font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--brand-ink);padding:0}
+.ucp:hover{text-decoration:underline}
 .panel h3 .lg{margin-left:10px;font-size:12px;font-weight:700;color:var(--t3)}
 .panel h3 .lg::before{content:'';display:inline-block;width:9px;height:9px;border-radius:2px;
   background:#3182F6;margin-right:4px;vertical-align:middle}
@@ -190,7 +199,9 @@ function renderLogin(msg){
 
 /* ══ 셸 ══ */
 let TAB='stats', RANGE=7, LEADS=[], POSTS=[], EDIT=null, EVENTS=[], SPEND=[], JMODE='all';
-let FROM='', TO='', NOBOT=true;
+let FROM='', TO='', NOBOT=true, LIVE=0, JMORE=8;
+const calcLive=()=>LIVE=new Set(EVENTS.filter(e=>Date.now()-new Date(e.created_at)<3e5
+  &&!EXCL.has(e.session_id)).map(e=>e.session_id)).size;
 /* 내부 세션 제외 — 우리가 확인하려고 돌아다닌 흔적이 통계를 흐린다 */
 let EXCL=(()=>{try{return new Set(JSON.parse(localStorage.getItem('btg_excl')||'[]'))}catch(e){return new Set()}})();
 const saveExcl=()=>{try{localStorage.setItem('btg_excl',JSON.stringify([...EXCL]))}catch(e){}};
@@ -201,19 +212,22 @@ function shell(inner){
     <span class="mk"><svg width="22" height="16" viewBox="0 0 27 19" fill="none">
       <path d="M1.6 17H9V10.2H16.4V3.4H21" stroke="#191F28" stroke-width="2.9" stroke-linecap="round" stroke-linejoin="round"/>
       <path d="M21 3.4H25.4" stroke="#3182F6" stroke-width="2.9" stroke-linecap="round"/></svg>어드민</span>
+    <span class="tag ${LIVE?'y':'n'}" id="livebadge">실시간 ${LIVE}명</span>
     <span class="sp"></span>
+    ${[[1,'오늘'],[7,'7일'],[30,'30일'],[90,'90일'],[0,'전체']].map(([v,l])=>
+      `<button class="pill ${!FROM&&RANGE===v?'on':''}" data-r="${v}">${l}</button>`).join('')}
+    <input id="d_from" type="date" value="${FROM}">
+    <input id="d_to" type="date" value="${TO}">
+    <button id="d_go">적용</button>
+    ${FROM?'<button id="d_clear">해제</button>':''}
+    <button id="botq" class="pill ${NOBOT?'':'on'}">${NOBOT?'봇 제외':'봇 포함'}</button>
+    <button id="csv_v">방문 CSV</button>
+    <button id="csv_l">리드 CSV</button>
+    ${EXCL.size?`<button id="exclr">제외 ${EXCL.size} 초기화</button>`:''}
     <span class="who" id="who"></span>
     <button id="out">로그아웃</button>
   </div></header>
   <div class="wrap">
-    <div class="tabs">
-      <button data-t="stats" class="${TAB==='stats'?'on':''}">집계</button>
-      <button data-t="funnel" class="${TAB==='funnel'?'on':''}">퍼널</button>
-      <button data-t="journey" class="${TAB==='journey'?'on':''}">여정</button>
-      <button data-t="ads" class="${TAB==='ads'?'on':''}">광고비</button>
-      <button data-t="leads" class="${TAB==='leads'?'on':''}">리드</button>
-      <button data-t="posts" class="${TAB==='posts'?'on':''}">칼럼</button>
-    </div>
     <div id="body">${inner}</div>
   </div>`;
   $('#out').onclick=async()=>{await sb.auth.signOut();renderLogin();};
@@ -223,7 +237,7 @@ function shell(inner){
 
 /* 날짜 도구줄 — 모든 탭이 같은 걸 쓴다 */
 function rangeBar(extra){
-  return `<div class="range">
+  return `<div class="range" style="display:none">
     ${[[1,'오늘'],[7,'7일'],[30,'30일'],[90,'90일'],[0,'전체']].map(([v,l])=>
       `<button data-r="${v}" class="${!FROM&&RANGE===v?'on':''}">${l}</button>`).join('')}
     <span style="flex:1"></span>
@@ -398,10 +412,10 @@ function statsHTML(){
     <div class="kpi"><b>${S.length?(n/S.length*100).toFixed(1):'0.0'}<small style="font-size:.55em">%</small></b><span>전환율 (${rangeLabel()})</span></div>
   </div>
   <div class="kpis" style="margin-top:10px">
-    <div class="kpi"><b>${S.length}</b><span>세션</span></div>
+    <div class="kpi"><b>${S.length}</b><span>세션 (${rangeLabel()})</span></div>
     <div class="kpi"><b>${S.filter(x=>x.depth>=1).length}</b><span>진단 시작</span></div>
     <div class="kpi"><b>${S.filter(x=>x.depth>=3).length}</b><span>9문항 완주</span></div>
-    <div class="kpi"><b>${n}</b><span>리드</span></div>
+    <div class="kpi"><b>${n}</b><span>리드 · 누적 ${LEADS.length}건</span></div>
   </div>
 
   <div class="panel" style="margin-top:14px"><h3>일별 추이 <span class="lg">방문</span><span class="lg g">순방문자</span><span class="lg r">리드</span></h3>
@@ -437,6 +451,7 @@ function statsHTML(){
 /* ══ 퍼널 ══ */
 function funnelHTML(){
   const S=sessions();
+  const HEAD='<h2 class="sect">퍼널</h2>';
   const top=S.length||1;
   const rows=STAGES.map((st,i)=>{
     const c=S.filter(x=>x.depth>=i).length;
@@ -450,14 +465,14 @@ function funnelHTML(){
   }
   const maxLeave=Math.max(1,...qDrop.map(d=>d.leave));
   return `
-  ${rangeBar()}
   <div class="panel" style="margin-top:14px"><h3>단계별 도달 · 이탈</h3>
     ${rows.map((r,i)=>{
       const prev=i?rows[i-1].count:r.count;
       const drop=prev-r.count;
+      const stepRate=prev?(r.count/prev*100):100;
       return `<div class="bar">
         <div class="t" style="height:34px"><i style="width:${r.overall.toFixed(1)}%"></i>
-          <em>${r.label} · ${r.count}명 (${r.overall.toFixed(0)}%)</em></div>
+          <em>${r.label} · ${r.count}명 · 전체 ${r.overall.toFixed(1)}%${i?' · 직전 단계 →'+stepRate.toFixed(1)+'%':''}</em></div>
         <span class="n" style="color:${drop>0?'var(--warn)':'var(--t4)'}">${i&&drop>0?'−'+drop:''}</span>
       </div>`}).join('')}
     <p class="hint">막대는 전체 방문 대비 비율입니다. 오른쪽 숫자는 직전 단계에서 빠져나간 사람입니다.</p>
@@ -485,11 +500,10 @@ function journeyHTML(){
     x.depth===0);
   const chips=[['all','전체'],['lead','제출까지'],['drop','진단 중 이탈'],['bounce','진입만']];
   return `
-  ${rangeBar()}
   <div class="range" style="margin-top:8px">
     ${chips.map(([v,l])=>`<button data-j="${v}" class="${JMODE===v?'on':''}">${l}</button>`).join('')}
   </div>
-  ${S.length?`<div class="plist">${S.slice(0,60).map(x=>{
+  ${S.length?`<div class="plist">${S.slice(0,JMORE).map(x=>{
     const stage=STAGES[x.depth]?STAGES[x.depth][1]:'진입';
     return `<div class="jcard">
       <div class="jhead">
@@ -509,7 +523,9 @@ function journeyHTML(){
         return `<span class="jitem"><b>${t}</b>${lab?' '+lab:''}</span>`;
       }).join('<i class="jarrow">→</i>')}</div>
     </div>`}).join('')}</div>`
-   :'<p class="empty">해당 조건의 세션이 없습니다</p>'}`;
+   :'<p class="empty">해당 조건의 세션이 없습니다</p>'}
+  ${S.length>JMORE?`<div class="tools"><span class="sp"></span>
+    <button id="jmore">더 보기 (${S.length-JMORE}개 남음)</button><span class="sp"></span></div>`:''}`;
 }
 
 /* ══ 광고비 ══ */
@@ -524,7 +540,6 @@ function adsHTML(){
   const keys=[...new Set([...Object.keys(bySrc),...Object.keys(spendBy)])];
   const today=new Date().toISOString().slice(0,10);
   return `
-  ${rangeBar()}
   <div class="tblwrap" style="margin-top:14px">${keys.length?`<table>
     <thead><tr><th>유입원</th><th>방문</th><th>리드</th><th>전환율</th><th>광고비</th><th>CPA</th></tr></thead>
     <tbody>${keys.map(k=>{const v=bySrc[k]||{visit:0,lead:0},sp=spendBy[k]||0;
@@ -554,18 +569,38 @@ function adsHTML(){
       </tr>`).join('')}</tbody></table></div>`:''}
   </div>
 
-  <div class="panel" style="margin-top:14px"><h3>광고 링크 만들기</h3>
-    <div class="tools" style="margin-top:10px">
-      <input id="u_src" placeholder="유입원 (naver, meta …)" style="min-width:170px">
-      <input id="u_med" placeholder="매체 (cpc, sns …)" style="min-width:150px">
-      <input id="u_camp" placeholder="캠페인" style="min-width:150px">
+  <div class="panel" style="margin-top:14px"><h3>UTM 링크 가이드 — 클릭하면 복사됩니다</h3>
+    <div class="tblwrap" style="margin-top:10px"><table style="min-width:640px">
+      <thead><tr><th>채널</th><th>링크</th></tr></thead>
+      <tbody>${UTM_T.map(t=>{
+        const url='https://bittalgil.com/?utm_source='+t[2]+'&utm_medium='+t[3];
+        return `<tr><td><span class="nm">${t[0]}</span><div class="hint" style="margin:2px 0 0">${t[1]}</div></td>
+          <td><button class="ucp" data-u="${url}">${url}</button></td></tr>`}).join('')}</tbody>
+    </table></div>
+    <div class="tools" style="margin-top:12px">
+      <input id="u_src" placeholder="직접 만들기 — 유입원" style="min-width:150px">
+      <input id="u_med" placeholder="매체" style="min-width:120px">
+      <input id="u_camp" placeholder="캠페인" style="min-width:130px">
       <button id="u_make">만들기</button>
     </div>
-    <p class="hint" id="u_out" style="user-select:all;word-break:break-all">유입원을 넣고 만들기를 누르세요.</p>
+    <p class="hint" id="u_out" style="user-select:all;word-break:break-all">캠페인마다 utm_campaign 을 다르게 주면 광고별 성과가 갈립니다.</p>
   </div>`;
 }
 
 /* ══ 리드 ══ */
+/* 자주 쓰는 유입 채널 — 매번 손으로 조합하면 표기가 갈려 통계가 쪼개진다 */
+const UTM_T=[
+  ['네이버 블로그 자연 유입','본문 글 안 일반 링크','naver_blog','organic'],
+  ['네이버 블로그 광고','광고·홍보 목적 게시물','naver_blog','cpc'],
+  ['네이버 카페','카페 게시글 안 링크','naver_cafe','organic'],
+  ['네이버 검색광고','파워링크 등','naver','cpc'],
+  ['카톡 채널 공지','카카오톡 채널 메시지','kakao','message'],
+  ['인스타 프로필 링크','bio 의 단일 링크','instagram','bio'],
+  ['인스타·페북 광고','메타 스폰서 광고','meta','cpc'],
+  ['유튜브 영상 설명','설명란·고정 댓글','youtube','video'],
+  ['명함 QR','오프라인 QR','offline','qr'],
+];
+
 const ST=[['new','신규'],['contacted','통화함'],['consulted','상담완료'],['closed','종료'],['invalid','무효']];
 let Q='', FILTER='';
 
@@ -575,7 +610,6 @@ function leadsHTML(){
     (!FILTER||r.status===FILTER) &&
     (!q||(r.name||'').includes(q)||(r.phone||'').includes(q.replace(/-/g,''))));
   return `
-  ${rangeBar()}
   <div class="tools">
     <input id="q" placeholder="이름·연락처 검색" value="${esc(Q)}">
     <select id="fs"><option value="">전체 상태</option>
@@ -622,6 +656,24 @@ function wireLeads(){
   });
 }
 
+/* 방문 CSV — 세션 단위. 광고 대행사에 넘길 때 쓴다 */
+function exportVisits(){
+  const S=sessions();
+  const head=['첫 접속','세션','머문 시간(초)','도달 단계','최대 문항','스크롤%','유입원','캠페인','기기','전화','카톡'];
+  const body=S.map(x=>[new Date(x.first).toLocaleString('ko-KR'),x.id,x.sec,
+    (STAGES[x.depth]||['','진입'])[1],x.maxQ,x.scroll,x.utm,x.camp,x.device,
+    x.tel?'O':'',x.kakao?'O':'']);
+  downloadCSV('빚탈길_방문',[head,...body]);
+}
+function downloadCSV(name,rows){
+  const csv=rows.map(r=>r.map(v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`${name}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
 function exportCSV(){
   const rows=inRange();
   const head=['접수','이름','연락처','경로','채무','월변제금','감액률','요건','유입원','캠페인','기기','상태','메모'];
@@ -632,13 +684,7 @@ function exportCSV(){
     r.eligible==null?'':r.eligible?'충족':'확인필요',
     r.utm_source||'', r.utm_campaign||'', r.device||'', r.status||'new', r.memo||''
   ]});
-  const csv=[head,...body].map(r=>r.map(v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
-  /* 엑셀이 UTF-8 을 알아보게 BOM 을 붙인다 — 없으면 한글이 깨진다 */
-  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=`빚탈길_리드_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click(); URL.revokeObjectURL(a.href);
+  downloadCSV('빚탈길_리드', [head, ...body]);
 }
 
 /* ══ 칼럼 ══ */
@@ -722,9 +768,9 @@ function wirePosts(){
 
 /* ══ 그리기 ══ */
 function draw(){
-  const view={stats:statsHTML,funnel:funnelHTML,journey:journeyHTML,
-              ads:adsHTML,leads:leadsHTML,posts:postsHTML}[TAB]||statsHTML;
-  shell(view());
+  /* 한 페이지에 전부 쌓는다. 탭으로 나누면 무엇이 무엇 때문인지 안 보인다 */
+  calcLive();
+  shell(statsHTML()+funnelHTML()+journeyHTML()+adsHTML()+leadsHTML()+postsHTML());
   app.querySelectorAll('.range button[data-r]').forEach(b=>b.onclick=()=>{
     RANGE=+b.dataset.r; FROM=''; TO=''; draw();});
   const go=$('#d_go');
@@ -734,10 +780,11 @@ function draw(){
   const cl=$('#d_clear'); if(cl)cl.onclick=()=>{FROM='';TO='';draw();};
   const bq=$('#botq'); if(bq)bq.onclick=()=>{NOBOT=!NOBOT;draw();};
   const ex=$('#exclr'); if(ex)ex.onclick=()=>{EXCL.clear();saveExcl();toast('제외 목록을 비웠습니다');draw();};
+  const cv=$('#csv_v'); if(cv)cv.onclick=exportVisits;
+  const cl2=$('#csv_l'); if(cl2)cl2.onclick=exportCSV;
   app.querySelectorAll('.range button[data-j]').forEach(b=>b.onclick=()=>{JMODE=b.dataset.j;draw();});
-  if(TAB==='leads')wireLeads();
-  if(TAB==='posts')wirePosts();
-  if(TAB==='ads')wireAds();
+  wireLeads(); wirePosts(); wireAds();
+  const jm=$('#jmore'); if(jm)jm.onclick=()=>{JMORE+=20;draw();};
   app.querySelectorAll('.jx').forEach(b=>b.onclick=()=>{
     EXCL.add(b.dataset.s); saveExcl(); toast('이 세션을 통계에서 뺐습니다'); draw();});
 }
@@ -757,6 +804,9 @@ function wireAds(){
     if(error){toast('삭제 실패');return;}
     await loadSpend(); draw();
   });
+  app.querySelectorAll('.ucp').forEach(b=>b.onclick=()=>{
+    navigator.clipboard&&navigator.clipboard.writeText(b.dataset.u)
+      .then(()=>toast('복사했습니다'),()=>{});});
   const mk=$('#u_make');
   if(mk)mk.onclick=()=>{
     const q=new URLSearchParams();
