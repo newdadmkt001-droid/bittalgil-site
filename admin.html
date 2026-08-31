@@ -8,12 +8,15 @@
 <title>빚탈길 어드민</title>
 <style>
 :root{
-  --bg:#F2F4F6; --card:#FFFFFF; --line:rgba(0,0,0,.08); --line2:rgba(0,0,0,.14);
-  --t1:#191F28; --t2:#333D4B; --t3:#646B74; --t4:#8B95A1;
-  --brand:#3182F6; --brand-ink:#286BCA; --face:#0B4FA8;
-  --ok:#166534; --okbg:rgba(21,128,61,.09);
-  --warn:#B91C1C; --warnbg:rgba(185,28,28,.08);
-  --r:10px; --r-sm:6px;
+  /* 지면에 푸른 기를 아주 조금 준다. 순회색 위에 흰 카드를 놓으면 카드가 안 뜬다 */
+  --bg:#F4F6FA; --card:#FFFFFF; --line:#EDF0F4; --line2:#DDE3EA;
+  --t1:#151A21; --t2:#39424E; --t3:#6B7684; --t4:#98A2AF;
+  --brand:#3182F6; --brand-ink:#1B64DA; --face:#0B4FA8;
+  --ok:#0F8A4D; --okbg:#E7F7EE;
+  --warn:#DC2626; --warnbg:#FDECEC;
+  --amber:#F59E0B; --violet:#8B5CF6; --cyan:#06B6D4; --rose:#F43F5E;
+  --r:16px; --r-sm:8px;
+  --sh:0 1px 2px rgba(21,26,33,.04), 0 6px 20px rgba(21,26,33,.05);
 }
 *{box-sizing:border-box;margin:0}
 body{background:var(--bg);color:var(--t1);
@@ -22,7 +25,7 @@ body{background:var(--bg);color:var(--t1);
 button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 a{color:var(--brand-ink)}
 
-.wrap{max-width:1240px;margin:0 auto;padding:0 20px 80px}
+.wrap{max-width:1280px;margin:0 auto;padding:0 20px 90px}
 @media (min-width:900px){.wrap{padding:0 32px 96px}}
 
 /* ── 로그인 ── */
@@ -60,23 +63,34 @@ a{color:var(--brand-ink)}
 .range button{height:34px;padding:0 13px;border:1px solid var(--line2);border-radius:999px;
   background:#fff;font-size:13.5px;font-weight:700;color:var(--t2);cursor:pointer}
 .range button.on{background:var(--t1);color:#fff;border-color:var(--t1)}
-.kpis{margin-top:14px;display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.kpis{margin-top:16px;display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 @media (min-width:760px){.kpis{grid-template-columns:repeat(4,1fr)}}
-.kpi{background:var(--card);border-radius:var(--r);padding:16px 18px}
-.kpi b{display:block;font-size:26px;font-weight:800;letter-spacing:-.04em;
-  font-variant-numeric:tabular-nums}
-.kpi span{display:block;margin-top:2px;font-size:13px;font-weight:600;color:var(--t3)}
+.kpi{background:var(--card);border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh);
+  display:flex;gap:13px;align-items:flex-start}
+.kpi .ic{flex:none;width:38px;height:38px;border-radius:11px;display:grid;place-items:center}
+.kpi .ic svg{width:19px;height:19px}
+.kpi .bd{min-width:0;flex:1}
+.kpi b{display:block;font-size:29px;font-weight:800;letter-spacing:-.045em;line-height:1.05;
+  color:var(--t1);font-variant-numeric:tabular-nums}
+.kpi span{display:block;margin-top:4px;font-size:12.5px;font-weight:700;color:var(--t3)}
+.kpi em{display:block;margin-top:2px;font-style:normal;font-size:12px;font-weight:700;color:var(--t4)}
+.kpi em.up{color:var(--ok)} .kpi em.dn{color:var(--warn)}
+.ic-b{background:#EAF2FE;color:#1B64DA} .ic-g{background:#E7F7EE;color:#0F8A4D}
+.ic-r{background:#FDECEC;color:#DC2626} .ic-v{background:#F1ECFE;color:#7C3AED}
+.ic-a{background:#FEF3E2;color:#D97706} .ic-c{background:#E6F7FB;color:#0891B2}
 .split{margin-top:18px;display:grid;gap:14px}
 @media (min-width:900px){.split{grid-template-columns:1fr 1fr}}
-.panel{background:var(--card);border-radius:var(--r);padding:18px 20px}
-.panel h3{font-size:14px;font-weight:800;color:var(--t3);letter-spacing:.01em}
-.bar{margin-top:12px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;
-  font-size:14px;font-weight:600}
-.bar .n{font-variant-numeric:tabular-nums;color:var(--t2)}
-.bar .t{position:relative;height:26px;background:#EEF1F4;border-radius:var(--r-sm);overflow:hidden}
-.bar .t i{position:absolute;inset:0 auto 0 0;background:var(--brand);opacity:.85}
-.bar .t em{position:absolute;left:10px;top:50%;transform:translateY(-50%);
-  font-style:normal;font-size:13px;font-weight:700;color:var(--t1)}
+.panel{background:var(--card);border-radius:var(--r);padding:22px 24px;box-shadow:var(--sh)}
+.panel h3{font-size:15.5px;font-weight:800;color:var(--t1);letter-spacing:-.02em}
+.panel h3 .sub{display:block;margin-top:3px;font-size:12.5px;font-weight:600;
+  color:var(--t3);letter-spacing:0}
+.bar{margin-top:10px}
+.bar .lb{display:flex;align-items:baseline;gap:8px;font-size:13.5px;font-weight:700;color:var(--t1)}
+.bar .lb .n{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:800}
+.bar .lb .sub{font-size:12px;font-weight:600;color:var(--t3)}
+.bar .lb .dn{font-size:12px;font-weight:800;color:var(--warn)}
+.bar .t{margin-top:6px;height:12px;background:#EDF1F6;border-radius:999px;overflow:hidden}
+.bar .t i{display:block;height:100%;border-radius:999px;background:var(--brand)}
 
 /* ── 표 ── */
 .tools{margin-top:18px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -85,17 +99,20 @@ a{color:var(--brand-ink)}
 .tools .sp{flex:1}
 .tools button{height:38px;padding:0 14px;border:1px solid var(--line2);border-radius:var(--r-sm);
   background:#fff;font-weight:700;cursor:pointer}
-.tblwrap{margin-top:12px;background:var(--card);border-radius:var(--r);overflow-x:auto}
+.tblwrap{margin-top:14px;overflow-x:auto}
 table{border-collapse:collapse;width:100%;min-width:920px;font-size:14px}
-th{text-align:left;font-size:12.5px;font-weight:800;color:var(--t3);white-space:nowrap;
-  padding:12px 14px;border-bottom:1px solid var(--line)}
-td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--t2)}
+th{text-align:left;font-size:11.5px;font-weight:800;color:var(--t4);white-space:nowrap;
+  letter-spacing:.02em;padding:0 14px 10px;border-bottom:1px solid var(--line)}
+th.num{text-align:right}
+td{padding:13px 14px;border-bottom:1px solid var(--line);vertical-align:middle;color:var(--t2)}
+td.num{text-align:right}
 tr:last-child td{border-bottom:0}
 td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
 td .nm{font-weight:700;color:var(--t1)}
 .tag{display:inline-block;padding:3px 9px;border-radius:var(--r-sm);font-size:12.5px;font-weight:700}
 .tag.y{color:var(--ok);background:var(--okbg)}
 .tag.n{color:var(--warn);background:var(--warnbg)}
+.tag.q{color:var(--t3);background:#EDF1F6}
 select.st{height:32px;border:1px solid var(--line2);border-radius:var(--r-sm);
   background:#fff;font-size:13px;font-weight:700;padding:0 8px}
 input.memo{width:100%;min-width:150px;height:32px;padding:0 10px;border:1px solid var(--line2);
@@ -103,8 +120,11 @@ input.memo{width:100%;min-width:150px;height:32px;padding:0 10px;border:1px soli
 .empty{padding:48px 20px;text-align:center;color:var(--t3);font-weight:600}
 
 .kpi span em{font-style:normal;font-weight:800;color:var(--brand-ink)}
-h2.sect{margin:30px 0 0;font-size:17px;font-weight:800;color:var(--t1);letter-spacing:-.02em}
+h2.sect{margin:34px 0 0;font-size:18px;font-weight:800;color:var(--t1);letter-spacing:-.03em}
+h2.sect .sub{display:block;margin-top:3px;font-size:12.5px;font-weight:600;color:var(--t3);letter-spacing:0}
 .top .in{flex-wrap:wrap;row-gap:8px}
+.top .in .who{order:98;margin-left:auto}
+.top .in #out{order:99}
 .top .in input[type=date]{height:32px;border:1px solid var(--line2);border-radius:6px;padding:0 8px;font-size:13px}
 .top .in button.pill{border-radius:999px;height:32px;padding:0 12px;font-size:13px}
 .top .in button.pill.on{background:var(--t1);color:#fff;border-color:var(--t1)}
@@ -121,28 +141,28 @@ h2.sect{margin:30px 0 0;font-size:17px;font-weight:800;color:var(--t1);letter-sp
   background:#fff;font-size:12px;font-weight:700;color:var(--t3);cursor:pointer}
 
 /* ── 여정 ── */
-.jcard{background:var(--card);border-radius:var(--r);padding:14px 18px}
+.jcard{background:var(--card);border-radius:var(--r);padding:16px 20px;box-shadow:var(--sh)}
 .jhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .jhead b{font-size:15px;font-weight:800;color:var(--t1)}
 .jhead .meta{font-size:12.5px;color:var(--t3);font-weight:600}
 .jhead .sp{flex:1}
 .jline{margin-top:10px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;
   font-size:12.5px;color:var(--t3);line-height:1.5}
-.jitem{background:#F2F4F6;border-radius:6px;padding:3px 9px;font-weight:600}
+.jitem{background:#F4F6FA;border:1px solid var(--line);border-radius:7px;padding:3px 9px;font-weight:600}
 .jitem b{color:var(--t2);font-weight:800}
 .jarrow{font-style:normal;color:var(--t4)}
 
 /* ── 칼럼 편집 ── */
 .plist{margin-top:14px;display:grid;gap:10px}
-.prow{background:var(--card);border-radius:var(--r);padding:14px 18px;display:flex;
-  align-items:center;gap:12px;flex-wrap:wrap}
+.prow{background:var(--card);border-radius:var(--r);padding:15px 20px;display:flex;
+  align-items:center;gap:12px;flex-wrap:wrap;box-shadow:var(--sh)}
 .prow b{font-size:15px;font-weight:700;color:var(--t1)}
 .prow .meta{font-size:13px;color:var(--t3);font-weight:600}
 .prow .sp{flex:1}
 .prow button{height:34px;padding:0 12px;border:1px solid var(--line2);border-radius:var(--r-sm);
   background:#fff;font-weight:700;cursor:pointer;font-size:13.5px}
 .prow button.pub{background:var(--t1);color:#fff;border-color:var(--t1)}
-.editor{margin-top:14px;background:var(--card);border-radius:var(--r);padding:20px}
+.editor{margin-top:14px;background:var(--card);border-radius:var(--r);padding:24px;box-shadow:var(--sh)}
 .editor label{display:block;margin-top:14px;font-size:13px;font-weight:800;color:var(--t3)}
 .editor input,.editor textarea,.editor select{width:100%;margin-top:6px;padding:10px 12px;
   border:1.5px solid var(--line2);border-radius:var(--r-sm);background:#fff;font-weight:600}
@@ -169,6 +189,42 @@ h2.sect{margin:30px 0 0;font-size:17px;font-weight:800;color:var(--t1);letter-sp
 const SB_URL='https://eapompomalqhlkzbkdvc.supabase.co', SB_KEY='sb_publishable_aazxQRK3-gSIRGJ6zHND9w_lE-9Ly9t';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
 const $=s=>document.querySelector(s), app=$('#app');
+/* 아이콘은 인라인 SVG. 아이콘 폰트나 외부 라이브러리를 붙이지 않는다 */
+const IC={
+  eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>',
+  users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>',
+  phone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z"/></svg>',
+  target:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></svg>',
+  trend:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>',
+  flag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4h9l1 2h6v9h-7l-1-2H4"/></svg>',
+};
+const kpi=(tone,icon,value,label,delta)=>`<div class="kpi">
+  <span class="ic ic-${tone}">${IC[icon]}</span>
+  <span class="bd"><b>${value}</b><span>${label}</span>${delta?`<em class="${/[+]\d/.test(delta)?'up':/[-−]\d/.test(delta)?'dn':''}">${delta}</em>`:''}</span>
+</div>`;
+
+/* 도넛 — 기기 분포처럼 '전체를 나눠 갖는' 것에만 쓴다 */
+function donut(items,colors){
+  const total=items.reduce((a,b)=>a+b[1],0)||1;
+  const R=54,C=2*Math.PI*R; let off=0;
+  return `<div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin-top:14px">
+    <svg viewBox="0 0 140 140" style="width:140px;height:140px;flex:none">
+      <g transform="translate(70,70) rotate(-90)">
+        ${items.map((it,i)=>{const len=C*it[1]/total;const el=`<circle r="${R}" fill="none"
+          stroke="${colors[i%colors.length]}" stroke-width="22"
+          stroke-dasharray="${len.toFixed(2)} ${(C-len).toFixed(2)}"
+          stroke-dashoffset="${(-off).toFixed(2)}"/>`;off+=len;return el;}).join('')}
+      </g>
+    </svg>
+    <div style="flex:1;min-width:130px">${items.map((it,i)=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13.5px;font-weight:700">
+        <span style="width:10px;height:10px;border-radius:3px;background:${colors[i%colors.length]}"></span>
+        <span style="flex:1;color:var(--t2)">${esc(it[0])}</span>
+        <span style="color:var(--t3);font-variant-numeric:tabular-nums">${it[1]}</span>
+        <span style="width:46px;text-align:right;color:var(--t1);font-variant-numeric:tabular-nums">${(it[1]/total*100).toFixed(1)}%</span>
+      </div>`).join('')}</div>
+  </div>`;
+}
 const won=n=>Number(n||0).toLocaleString('ko-KR');
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let toastT;
@@ -212,7 +268,7 @@ function shell(inner){
     <span class="mk"><svg width="22" height="16" viewBox="0 0 27 19" fill="none">
       <path d="M1.6 17H9V10.2H16.4V3.4H21" stroke="#191F28" stroke-width="2.9" stroke-linecap="round" stroke-linejoin="round"/>
       <path d="M21 3.4H25.4" stroke="#3182F6" stroke-width="2.9" stroke-linecap="round"/></svg>어드민</span>
-    <span class="tag ${LIVE?'y':'n'}" id="livebadge">실시간 ${LIVE}명</span>
+    <span class="tag ${LIVE?'y':'q'}" id="livebadge">실시간 ${LIVE}명</span>
     <span class="sp"></span>
     ${[[1,'오늘'],[7,'7일'],[30,'30일'],[90,'90일'],[0,'전체']].map(([v,l])=>
       `<button class="pill ${!FROM&&RANGE===v?'on':''}" data-r="${v}">${l}</button>`).join('')}
@@ -264,8 +320,12 @@ function areaChart(series,keys,colors,h){
   return `<svg viewBox="0 0 ${W} ${h}" style="width:100%;height:auto">
     ${[0,.5,1].map(g=>`<line x1="${P}" x2="${W-P}" y1="${y(max*g).toFixed(1)}" y2="${y(max*g).toFixed(1)}"
       stroke="#E9EDF1" stroke-width="1"/><text x="0" y="${(y(max*g)+4).toFixed(1)}" font-size="11" fill="#8B95A1">${Math.round(max*g)}</text>`).join('')}
-    ${keys.map((k,i)=>`<path d="${fill(k)}" fill="${colors[i]}" opacity=".12"/>
-      <path d="${path(k)}" fill="none" stroke="${colors[i]}" stroke-width="2.2" stroke-linejoin="round"/>`).join('')}
+    <defs>${keys.map((k,i)=>`<linearGradient id="g${i}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="${colors[i]}" stop-opacity=".26"/>
+      <stop offset="1" stop-color="${colors[i]}" stop-opacity="0"/></linearGradient>`).join('')}</defs>
+    ${keys.map((k,i)=>`<path d="${fill(k)}" fill="url(#g${i})"/>
+      <path d="${path(k)}" fill="none" stroke="${colors[i]}" stroke-width="2.4"
+        stroke-linejoin="round" stroke-linecap="round"/>`).join('')}
     ${series.map((d,i)=>i%step?'':`<text x="${x(i).toFixed(1)}" y="${h-5}" font-size="11" fill="#8B95A1" text-anchor="middle">${d.label}</text>`).join('')}
   </svg>`;
 }
@@ -274,8 +334,8 @@ function barChart(vals,labels){
   const bw=(W-P*2)/n*0.68;
   return `<svg viewBox="0 0 ${W} ${h}" style="width:100%;height:auto">
     ${vals.map((v,i)=>{const bx=P+(W-P*2)*(i/n)+((W-P*2)/n-bw)/2, bh=(h-30)*(v/max);
-      return `<rect x="${bx.toFixed(1)}" y="${(h-20-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}"
-        rx="3" fill="#3182F6" opacity="${v?0.85:0.15}"/>`}).join('')}
+      return `<rect x="${bx.toFixed(1)}" y="${(h-20-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(bh,2).toFixed(1)}"
+        rx="4" fill="#3182F6" opacity="${v?0.9:0.12}"/>`}).join('')}
     ${labels.map((l,i)=>i%3?'':`<text x="${(P+(W-P*2)*(i/n)+(W-P*2)/n/2).toFixed(1)}" y="${h-5}"
       font-size="11" fill="#8B95A1" text-anchor="middle">${l}</text>`).join('')}
   </svg>`;
@@ -406,41 +466,42 @@ function statsHTML(){
   return `
   ${rangeBar(`<span class="tag ${live?'y':'n'}" style="align-self:center">지금 ${live}명</span>`)}
   <div class="kpis">
-    <div class="kpi"><b>${tV}</b><span>오늘 방문 <em class="dl">${delta(tV,yV)}</em></span></div>
-    <div class="kpi"><b>${tS}</b><span>오늘 순방문자 <em class="dl">${delta(tS,yS)}</em></span></div>
-    <div class="kpi"><b>${tL}</b><span>오늘 리드 <em class="dl">${delta(tL,yL)}</em></span></div>
-    <div class="kpi"><b>${S.length?(n/S.length*100).toFixed(1):'0.0'}<small style="font-size:.55em">%</small></b><span>전환율 (${rangeLabel()})</span></div>
+    ${kpi('b','eye',tV,'오늘 방문','어제 대비 '+delta(tV,yV))}
+    ${kpi('g','users',tS,'오늘 순방문자','어제 대비 '+delta(tS,yS))}
+    ${kpi('r','phone',tL,'오늘 리드','어제 대비 '+delta(tL,yL))}
+    ${kpi('v','target',(S.length?(n/S.length*100).toFixed(1):'0.0')+'<small style="font-size:.5em">%</small>','전환율',rangeLabel()+' 기준 '+n+' / '+S.length)}
   </div>
   <div class="kpis" style="margin-top:10px">
-    <div class="kpi"><b>${S.length}</b><span>세션 (${rangeLabel()})</span></div>
-    <div class="kpi"><b>${S.filter(x=>x.depth>=1).length}</b><span>진단 시작</span></div>
-    <div class="kpi"><b>${S.filter(x=>x.depth>=3).length}</b><span>9문항 완주</span></div>
-    <div class="kpi"><b>${n}</b><span>리드 · 누적 ${LEADS.length}건</span></div>
+    ${kpi('c','trend',S.length,'세션',rangeLabel())}
+    ${kpi('a','flag',S.filter(x=>x.depth>=1).length,'진단 시작',
+      S.length?'세션의 '+(S.filter(x=>x.depth>=1).length/S.length*100).toFixed(0)+'%':'')}
+    ${kpi('b','target',S.filter(x=>x.depth>=3).length,'9문항 완주','')}
+    ${kpi('g','phone',n,'리드','누적 '+LEADS.length+'건')}
   </div>
 
-  <div class="panel" style="margin-top:14px"><h3>일별 추이 <span class="lg">방문</span><span class="lg g">순방문자</span><span class="lg r">리드</span></h3>
+  <div class="panel" style="margin-top:14px"><h3>일별 추이<span class="sub">방문 · 순방문자 · 리드</span><span class="lg">방문</span><span class="lg g">순방문자</span><span class="lg r">리드</span></h3>
     ${areaChart(days,['visits','sessions','leads'],['#3182F6','#10B981','#E5484D'])}</div>
 
-  <div class="panel" style="margin-top:14px"><h3>시간대별 방문 (0~23시)</h3>
+  <div class="panel" style="margin-top:14px"><h3>시간대별 방문<span class="sub">0시 ~ 23시 · 광고 시간대를 정할 때 본다</span></h3>
     ${barChart(hours,hours.map((_,i)=>i+'시'))}</div>
 
   <div class="split">
-    <div class="panel"><h3>유입 채널 + 전환율</h3>
+    <div class="panel"><h3>유입 채널<span class="sub">utm_source · 없으면 referrer 도메인 — 방문 대비 리드</span></h3>
       ${table([['채널'],['세션',1],['리드',1],['전환율',1]],Object.entries(bySrc).sort((a,b)=>b[1].v-a[1].v),
         ([k,v])=>`<tr><td><span class="nm">${esc(k)}</span></td><td class="num">${v.v}</td>
           <td class="num">${v.l}</td><td class="num">${v.v?(v.l/v.v*100).toFixed(1)+'%':'-'}</td></tr>`)}</div>
-    <div class="panel"><h3>기기</h3>
-      ${table([['기기'],['세션',1]],grp(S,'device','미상'),
-        ([k,v])=>`<tr><td><span class="nm">${esc(k)}</span></td><td class="num">${v}</td></tr>`)}</div>
-    <div class="panel"><h3>캠페인</h3>
+    <div class="panel"><h3>기기<span class="sub">모바일 / 데스크톱</span></h3>
+      ${(()=>{const g=grp(S,'device','미상');
+        return g.length?donut(g,['#3182F6','#10B981','#F59E0B','#8B5CF6']):'<p class="hint">데이터 없음</p>';})()}</div>
+    <div class="panel"><h3>캠페인<span class="sub">utm_campaign 기준</span></h3>
       ${table([['캠페인'],['세션',1]],grp(S,'camp','없음'),
         ([k,v])=>`<tr><td>${esc(k)}</td><td class="num">${v}</td></tr>`)}</div>
-    <div class="panel"><h3>리드 처리 상태</h3>
+    <div class="panel"><h3>리드 처리 상태<span class="sub">통화·상담 진행 현황</span></h3>
       ${table([['상태'],['건수',1]],grp(rows,'status','new'),
         ([k,v])=>`<tr><td>${esc((ST.find(s=>s[0]===k)||[,k])[1])}</td><td class="num">${v}</td></tr>`)}</div>
   </div>
 
-  <div class="panel" style="margin-top:14px"><h3>칼럼별 기여 — 어떤 글이 진단으로 데려오나</h3>
+  <div class="panel" style="margin-top:14px"><h3>칼럼별 기여<span class="sub">글을 읽은 세션이 진단·리드까지 간 비율</span></h3>
     ${artRows.length?table([['글'],['읽은 세션',1],['진단 시작',1],['리드',1],['전환율',1]],artRows,
       a=>`<tr><td><a href="https://bittalgil.com/#/columns/${esc(a.slug)}" target="_blank">${esc(a.title)}</a></td>
         <td class="num">${a.v}</td><td class="num">${a.started}</td>
@@ -451,7 +512,6 @@ function statsHTML(){
 /* ══ 퍼널 ══ */
 function funnelHTML(){
   const S=sessions();
-  const HEAD='<h2 class="sect">퍼널</h2>';
   const top=S.length||1;
   const rows=STAGES.map((st,i)=>{
     const c=S.filter(x=>x.depth>=i).length;
@@ -465,23 +525,28 @@ function funnelHTML(){
   }
   const maxLeave=Math.max(1,...qDrop.map(d=>d.leave));
   return `
-  <div class="panel" style="margin-top:14px"><h3>단계별 도달 · 이탈</h3>
+  <h2 class="sect">어디서 빠져나가나<span class="sub">고칠 지점을 여기서 찾는다</span></h2>
+  <div class="panel" style="margin-top:14px"><h3>퍼널<span class="sub">진입 → 진단 → 계산 → 연락처 → 제출 (세션 단위)</span></h3>
     ${rows.map((r,i)=>{
       const prev=i?rows[i-1].count:r.count;
       const drop=prev-r.count;
       const stepRate=prev?(r.count/prev*100):100;
+      const C=['#3182F6','#3B82F6','#06B6D4','#10B981','#84CC16','#F59E0B','#F43F5E'];
       return `<div class="bar">
-        <div class="t" style="height:34px"><i style="width:${r.overall.toFixed(1)}%"></i>
-          <em>${r.label} · ${r.count}명 · 전체 ${r.overall.toFixed(1)}%${i?' · 직전 단계 →'+stepRate.toFixed(1)+'%':''}</em></div>
-        <span class="n" style="color:${drop>0?'var(--warn)':'var(--t4)'}">${i&&drop>0?'−'+drop:''}</span>
+        <div class="lb"><span>${r.label}</span>
+          <span class="sub">전체 ${r.overall.toFixed(1)}%${i?' · 직전 →'+stepRate.toFixed(1)+'%':''}</span>
+          ${i&&drop>0?`<span class="dn">−${drop}</span>`:''}
+          <span class="n">${r.count}</span></div>
+        <div class="t"><i style="width:${r.overall.toFixed(1)}%;background:${C[i%C.length]}"></i></div>
       </div>`}).join('')}
     <p class="hint">막대는 전체 방문 대비 비율입니다. 오른쪽 숫자는 직전 단계에서 빠져나간 사람입니다.</p>
   </div>
-  <div class="panel" style="margin-top:14px"><h3>문항별 이탈</h3>
+  <div class="panel" style="margin-top:14px"><h3>문항별 이탈<span class="sub">가장 긴 막대가 사람을 가장 많이 놓치는 문항</span></h3>
     ${qDrop.map(d=>`<div class="bar">
-      <div class="t"><i style="width:${(d.leave/maxLeave*100).toFixed(1)}%;background:#E5484D;opacity:.8"></i>
-        <em>${d.q}번 문항 · 진입 ${d.enter}명</em></div>
-      <span class="n">${d.leave?'−'+d.leave:'0'}</span></div>`).join('')}
+      <div class="lb"><span>${d.q}번 문항</span><span class="sub">진입 ${d.enter}명</span>
+        <span class="n" style="color:${d.leave?'var(--warn)':'var(--t4)'}">${d.leave?'−'+d.leave:'0'}</span></div>
+      <div class="t"><i style="width:${(d.leave/maxLeave*100).toFixed(1)}%;background:#F43F5E"></i></div>
+    </div>`).join('')}
     <p class="hint">가장 긴 막대가 가장 많이 포기하는 문항입니다. 문항을 고칠 근거가 여기서 나옵니다.</p>
   </div>`;
 }
@@ -500,7 +565,8 @@ function journeyHTML(){
     x.depth===0);
   const chips=[['all','전체'],['lead','제출까지'],['drop','진단 중 이탈'],['bounce','진입만']];
   return `
-  <div class="range" style="margin-top:8px">
+  <h2 class="sect">세션 여정<span class="sub">한 사람이 무엇을 눌렀는지 순서대로</span></h2>
+  <div class="range" style="margin-top:12px">
     ${chips.map(([v,l])=>`<button data-j="${v}" class="${JMODE===v?'on':''}">${l}</button>`).join('')}
   </div>
   ${S.length?`<div class="plist">${S.slice(0,JMORE).map(x=>{
@@ -540,8 +606,10 @@ function adsHTML(){
   const keys=[...new Set([...Object.keys(bySrc),...Object.keys(spendBy)])];
   const today=new Date().toISOString().slice(0,10);
   return `
-  <div class="tblwrap" style="margin-top:14px">${keys.length?`<table>
-    <thead><tr><th>유입원</th><th>방문</th><th>리드</th><th>전환율</th><th>광고비</th><th>CPA</th></tr></thead>
+  <h2 class="sect">광고비와 성과<span class="sub">유입원별 CPA — 어디에 더 쓸지 정한다</span></h2>
+  <div class="panel" style="margin-top:14px"><h3>채널별 ROI<span class="sub">광고비 ÷ 리드 = 1건당 비용</span></h3>
+  <div class="tblwrap">${keys.length?`<table>
+    <thead><tr><th>유입원</th><th class="num">방문</th><th class="num">리드</th><th class="num">전환율</th><th class="num">광고비</th><th class="num">CPA</th></tr></thead>
     <tbody>${keys.map(k=>{const v=bySrc[k]||{visit:0,lead:0},sp=spendBy[k]||0;
       return `<tr>
         <td><span class="nm">${esc(k)}</span></td>
@@ -550,9 +618,9 @@ function adsHTML(){
         <td class="num">${v.visit?(v.lead/v.visit*100).toFixed(1)+'%':'-'}</td>
         <td class="num">${sp?won(sp)+'원':'-'}</td>
         <td class="num">${sp&&v.lead?won(Math.round(sp/v.lead))+'원':'-'}</td>
-      </tr>`}).join('')}</tbody></table>`:'<p class="empty">데이터가 없습니다</p>'}</div>
+      </tr>`}).join('')}</tbody></table>`:'<p class="hint">데이터가 없습니다</p>'}</div></div>
 
-  <div class="panel" style="margin-top:14px"><h3>광고비 입력</h3>
+  <div class="panel" style="margin-top:14px"><h3>광고비 입력<span class="sub">유입원은 광고 링크의 utm_source 와 같게</span></h3>
     <div class="tools" style="margin-top:10px">
       <input id="sp_day" type="date" value="${today}">
       <input id="sp_src" placeholder="유입원 (utm_source)" style="min-width:170px">
@@ -569,7 +637,7 @@ function adsHTML(){
       </tr>`).join('')}</tbody></table></div>`:''}
   </div>
 
-  <div class="panel" style="margin-top:14px"><h3>UTM 링크 가이드 — 클릭하면 복사됩니다</h3>
+  <div class="panel" style="margin-top:14px"><h3>UTM 링크 가이드<span class="sub">클릭하면 복사됩니다 — 표기가 갈리면 통계가 쪼개진다</span></h3>
     <div class="tblwrap" style="margin-top:10px"><table style="min-width:640px">
       <thead><tr><th>채널</th><th>링크</th></tr></thead>
       <tbody>${UTM_T.map(t=>{
@@ -606,10 +674,11 @@ let Q='', FILTER='';
 
 function leadsHTML(){
   const q=Q.trim();
+  const HEAD='<h2 class="sect">리드<span class="sub">상태와 메모는 고치면 바로 저장된다</span></h2>';
   const rows=inRange().filter(r=>
     (!FILTER||r.status===FILTER) &&
     (!q||(r.name||'').includes(q)||(r.phone||'').includes(q.replace(/-/g,''))));
-  return `
+  return `${HEAD}
   <div class="tools">
     <input id="q" placeholder="이름·연락처 검색" value="${esc(Q)}">
     <select id="fs"><option value="">전체 상태</option>
@@ -689,8 +758,9 @@ function exportCSV(){
 
 /* ══ 칼럼 ══ */
 function postsHTML(){
-  if(EDIT) return editorHTML();
-  return `<div class="tools"><span class="sp"></span><button id="new">새 칼럼</button></div>
+  if(EDIT) return `<h2 class="sect">칼럼 편집</h2>`+editorHTML();
+  return `<h2 class="sect">칼럼<span class="sub">발행하면 사이트에 바로 반영된다</span></h2>
+  <div class="tools"><span class="sp"></span><button id="new">새 칼럼</button></div>
   <div class="plist">${POSTS.length?POSTS.map(p=>`<div class="prow" data-slug="${esc(p.slug)}">
     <b>${esc(p.title)}</b>
     <span class="meta">${esc(p.cat)} · ${p.read_min}분 · /${esc(p.slug)}</span>
