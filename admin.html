@@ -8,15 +8,18 @@
 <title>빚탈길 어드민</title>
 <style>
 :root{
-  /* 지면에 푸른 기를 아주 조금 준다. 순회색 위에 흰 카드를 놓으면 카드가 안 뜬다 */
-  --bg:#F4F6FA; --card:#FFFFFF; --line:#EDF0F4; --line2:#DDE3EA;
-  --t1:#151A21; --t2:#39424E; --t3:#6B7684; --t4:#98A2AF;
-  --brand:#3182F6; --brand-ink:#1B64DA; --face:#0B4FA8;
-  --ok:#0F8A4D; --okbg:#E7F7EE;
-  --warn:#DC2626; --warnbg:#FDECEC;
-  --amber:#F59E0B; --violet:#8B5CF6; --cyan:#06B6D4; --rose:#F43F5E;
-  --r:16px; --r-sm:8px;
-  --sh:0 1px 2px rgba(21,26,33,.04), 0 6px 20px rgba(21,26,33,.05);
+  /* 신용톡톡 tailwind.config.ts 실측값 */
+  --bg:#F5F8FE; --card:#FFFFFF; --line:#F0F2F6; --line2:#E5E7EB;
+  --t1:#1A1A2E; --t2:#6B7280; --t3:#9CA3AF; --t4:#B4BAC4;
+  --brand:#1565F9; --brand-soft:#EEF4FF; --brand-ink:#1153D6; --face:#0B4FA8;
+  --ok:#22C55E; --okbg:#ECFDF3;
+  --warn:#EF4444; --warnbg:#FEF2F2;
+  --amber:#FF9800; --violet:#8B5CF6; --cyan:#06B6D4; --rose:#F43F5E;
+  --chip:#F3F4F6;
+  --r:24px; --r-md:12px; --r-sm:8px;
+  /* 그림자에 파랑 기를 넣는다 — 회색 그림자면 카드가 지면에서 안 뜬다 */
+  --sh:0 2px 8px rgba(21,101,249,.04);
+  --sh2:0 8px 30px rgba(21,101,249,.06);
 }
 *{box-sizing:border-box;margin:0}
 body{background:var(--bg);color:var(--t1);
@@ -60,29 +63,31 @@ a{color:var(--brand-ink)}
 
 /* ── 집계 ── */
 .range{display:flex;gap:6px;margin-top:18px;flex-wrap:wrap}
-.range button{height:34px;padding:0 13px;border:1px solid var(--line2);border-radius:999px;
-  background:#fff;font-size:13.5px;font-weight:700;color:var(--t2);cursor:pointer}
-.range button.on{background:var(--t1);color:#fff;border-color:var(--t1)}
+.range button{height:30px;padding:0 12px;border:0;border-radius:999px;
+  background:var(--chip);font-size:12px;font-weight:600;color:var(--t2);cursor:pointer}
+.range button.on{background:var(--brand);color:#fff}
 .kpis{margin-top:16px;display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 @media (min-width:760px){.kpis{grid-template-columns:repeat(4,1fr)}}
-.kpi{background:var(--card);border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh);
-  display:flex;gap:13px;align-items:flex-start}
-.kpi .ic{flex:none;width:38px;height:38px;border-radius:11px;display:grid;place-items:center}
-.kpi .ic svg{width:19px;height:19px}
-.kpi .bd{min-width:0;flex:1}
-.kpi b{display:block;font-size:29px;font-weight:800;letter-spacing:-.045em;line-height:1.05;
-  color:var(--t1);font-variant-numeric:tabular-nums}
-.kpi span{display:block;margin-top:4px;font-size:12.5px;font-weight:700;color:var(--t3)}
-.kpi em{display:block;margin-top:2px;font-style:normal;font-size:12px;font-weight:700;color:var(--t4)}
+/* 아이콘·라벨이 한 줄, 그 아래 값, 그 아래 힌트 */
+.kpi{background:var(--card);border-radius:var(--r);padding:16px;box-shadow:var(--sh)}
+.kpi .hd{display:flex;align-items:center;gap:8px}
+.kpi .ic{flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center}
+.kpi .ic svg{width:16px;height:16px}
+.kpi .lb{font-size:12px;font-weight:600;color:var(--t2);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.kpi b{display:block;margin-top:10px;font-size:24px;font-weight:800;line-height:1;
+  letter-spacing:-.03em;color:var(--t1);font-variant-numeric:tabular-nums}
+.kpi em{display:block;margin-top:6px;font-style:normal;font-size:11px;font-weight:600;color:var(--t3)}
 .kpi em.up{color:var(--ok)} .kpi em.dn{color:var(--warn)}
-.ic-b{background:#EAF2FE;color:#1B64DA} .ic-g{background:#E7F7EE;color:#0F8A4D}
-.ic-r{background:#FDECEC;color:#DC2626} .ic-v{background:#F1ECFE;color:#7C3AED}
-.ic-a{background:#FEF3E2;color:#D97706} .ic-c{background:#E6F7FB;color:#0891B2}
-.split{margin-top:18px;display:grid;gap:14px}
+.ic-b{background:var(--brand-soft);color:var(--brand)} .ic-g{background:#ECFDF3;color:#16A34A}
+.ic-r{background:#FEF2F2;color:#EF4444} .ic-v{background:#F5F3FF;color:#8B5CF6}
+.ic-a{background:#FFF7ED;color:#EA580C} .ic-c{background:#ECFEFF;color:#0891B2}
+.split{margin-top:12px;display:grid;gap:12px}
 @media (min-width:900px){.split{grid-template-columns:1fr 1fr}}
-.panel{background:var(--card);border-radius:var(--r);padding:22px 24px;box-shadow:var(--sh)}
-.panel h3{font-size:15.5px;font-weight:800;color:var(--t1);letter-spacing:-.02em}
-.panel h3 .sub{display:block;margin-top:3px;font-size:12.5px;font-weight:600;
+@media (max-width:899px){.split{grid-template-columns:1fr!important}}
+.panel{background:var(--card);border-radius:var(--r);padding:20px;box-shadow:var(--sh)}
+.panel h3{font-size:15px;font-weight:700;color:var(--t1);letter-spacing:-.01em;margin-bottom:12px}
+.panel h3 .sub{display:block;margin-top:2px;font-size:12px;font-weight:500;
   color:var(--t3);letter-spacing:0}
 .bar{margin-top:10px}
 .bar .lb{display:flex;align-items:baseline;gap:8px;font-size:13.5px;font-weight:700;color:var(--t1)}
@@ -101,15 +106,17 @@ a{color:var(--brand-ink)}
   background:#fff;font-weight:700;cursor:pointer}
 .tblwrap{margin-top:14px;overflow-x:auto}
 table{border-collapse:collapse;width:100%;min-width:920px;font-size:14px}
-th{text-align:left;font-size:11.5px;font-weight:800;color:var(--t4);white-space:nowrap;
-  letter-spacing:.02em;padding:0 14px 10px;border-bottom:1px solid var(--line)}
+table{font-size:12.5px}
+th{text-align:left;font-size:11px;font-weight:600;color:var(--t3);white-space:nowrap;
+  padding:0 12px 8px;border-bottom:1px solid var(--line2)}
 th.num{text-align:right}
-td{padding:13px 14px;border-bottom:1px solid var(--line);vertical-align:middle;color:var(--t2)}
-td.num{text-align:right}
+td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle;color:var(--t2)}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+td .nm{font-weight:600;color:var(--t1)}
 tr:last-child td{border-bottom:0}
 td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
 td .nm{font-weight:700;color:var(--t1)}
-.tag{display:inline-block;padding:3px 9px;border-radius:var(--r-sm);font-size:12.5px;font-weight:700}
+.tag{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:600}
 .tag.y{color:var(--ok);background:var(--okbg)}
 .tag.n{color:var(--warn);background:var(--warnbg)}
 .tag.q{color:var(--t3);background:#EDF1F6}
@@ -120,15 +127,20 @@ input.memo{width:100%;min-width:150px;height:32px;padding:0 10px;border:1px soli
 .empty{padding:48px 20px;text-align:center;color:var(--t3);font-weight:600}
 
 .kpi span em{font-style:normal;font-weight:800;color:var(--brand-ink)}
-h2.sect{margin:34px 0 0;font-size:18px;font-weight:800;color:var(--t1);letter-spacing:-.03em}
-h2.sect .sub{display:block;margin-top:3px;font-size:12.5px;font-weight:600;color:var(--t3);letter-spacing:0}
-.top .in{flex-wrap:wrap;row-gap:8px}
-.top .in .who{order:98;margin-left:auto}
+h2.sect{margin:28px 0 0;font-size:16px;font-weight:700;color:var(--t1);letter-spacing:-.01em}
+h2.sect .sub{display:block;margin-top:2px;font-size:12px;font-weight:500;color:var(--t3);letter-spacing:0}
+.top .in{flex-wrap:wrap;row-gap:6px;gap:6px;padding:10px 20px}
+@media (min-width:900px){.top .in{padding:10px 32px}}
+.top .mk{margin-right:6px}
+.top .in .who{order:98;margin-left:auto;font-size:12px}
 .top .in #out{order:99}
-.top .in input[type=date]{height:32px;border:1px solid var(--line2);border-radius:6px;padding:0 8px;font-size:13px}
-.top .in button.pill{border-radius:999px;height:32px;padding:0 12px;font-size:13px}
-.top .in button.pill.on{background:var(--t1);color:#fff;border-color:var(--t1)}
-.top .in button{height:32px;padding:0 11px;font-size:13px}
+.top .in input[type=date]{height:28px;border:1px solid var(--line2);border-radius:999px;
+  padding:0 10px;font-size:11.5px;color:var(--t2);background:var(--chip)}
+.top .in button{height:28px;padding:0 11px;font-size:12px;font-weight:600;
+  border-radius:999px;border:0;background:var(--chip);color:var(--t2)}
+.top .in button:hover{background:#E5E7EB}
+.top .in button.pill.on{background:var(--brand);color:#fff}
+.tabs{display:none}
 .ucp{width:100%;text-align:left;border:0;background:none;cursor:pointer;
   font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--brand-ink);padding:0}
 .ucp:hover{text-decoration:underline}
@@ -141,7 +153,7 @@ h2.sect .sub{display:block;margin-top:3px;font-size:12.5px;font-weight:600;color
   background:#fff;font-size:12px;font-weight:700;color:var(--t3);cursor:pointer}
 
 /* ── 여정 ── */
-.jcard{background:var(--card);border-radius:var(--r);padding:16px 20px;box-shadow:var(--sh)}
+.jcard{background:var(--card);border-radius:var(--r-md);padding:14px 18px;box-shadow:var(--sh)}
 .jhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .jhead b{font-size:15px;font-weight:800;color:var(--t1)}
 .jhead .meta{font-size:12.5px;color:var(--t3);font-weight:600}
@@ -153,8 +165,8 @@ h2.sect .sub{display:block;margin-top:3px;font-size:12.5px;font-weight:600;color
 .jarrow{font-style:normal;color:var(--t4)}
 
 /* ── 칼럼 편집 ── */
-.plist{margin-top:14px;display:grid;gap:10px}
-.prow{background:var(--card);border-radius:var(--r);padding:15px 20px;display:flex;
+.plist{margin-top:12px;display:grid;gap:8px}
+.prow{background:var(--card);border-radius:var(--r-md);padding:14px 18px;display:flex;
   align-items:center;gap:12px;flex-wrap:wrap;box-shadow:var(--sh)}
 .prow b{font-size:15px;font-weight:700;color:var(--t1)}
 .prow .meta{font-size:13px;color:var(--t3);font-weight:600}
@@ -198,9 +210,10 @@ const IC={
   trend:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>',
   flag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4h9l1 2h6v9h-7l-1-2H4"/></svg>',
 };
-const kpi=(tone,icon,value,label,delta)=>`<div class="kpi">
-  <span class="ic ic-${tone}">${IC[icon]}</span>
-  <span class="bd"><b>${value}</b><span>${label}</span>${delta?`<em class="${/[+]\d/.test(delta)?'up':/[-−]\d/.test(delta)?'dn':''}">${delta}</em>`:''}</span>
+const kpi=(tone,icon,value,label,hint)=>`<div class="kpi">
+  <div class="hd"><span class="ic ic-${tone}">${IC[icon]}</span><span class="lb">${label}</span></div>
+  <b>${value}</b>
+  ${hint?`<em class="${/[+]\d/.test(hint)?'up':/[-−]\d/.test(hint)?'dn':''}">${hint}</em>`:'<em>&nbsp;</em>'}
 </div>`;
 
 /* 도넛 — 기기 분포처럼 '전체를 나눠 갖는' 것에만 쓴다 */
@@ -309,7 +322,7 @@ function rangeBar(extra){
 
 /* ── 아주 작은 차트 두 개. 외부 스크립트를 안 쓰므로 SVG 로 직접 그린다 ── */
 function areaChart(series,keys,colors,h){
-  h=h||150; const W=760, P=26;
+  h=h||120; const W=900, P=30;
   const n=series.length||1;
   const max=Math.max(1,...series.flatMap(d=>keys.map(k=>d[k]||0)));
   const x=i=>P+(W-P*2)*(n===1?0.5:i/(n-1));
@@ -319,25 +332,25 @@ function areaChart(series,keys,colors,h){
   const step=Math.max(1,Math.ceil(n/7));
   return `<svg viewBox="0 0 ${W} ${h}" style="width:100%;height:auto">
     ${[0,.5,1].map(g=>`<line x1="${P}" x2="${W-P}" y1="${y(max*g).toFixed(1)}" y2="${y(max*g).toFixed(1)}"
-      stroke="#E9EDF1" stroke-width="1"/><text x="0" y="${(y(max*g)+4).toFixed(1)}" font-size="11" fill="#8B95A1">${Math.round(max*g)}</text>`).join('')}
+      stroke="#EEF1F6" stroke-width="1"/><text x="0" y="${(y(max*g)+4).toFixed(1)}" font-size="11" fill="#9CA3AF">${Math.round(max*g)}</text>`).join('')}
     <defs>${keys.map((k,i)=>`<linearGradient id="g${i}" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="${colors[i]}" stop-opacity=".26"/>
       <stop offset="1" stop-color="${colors[i]}" stop-opacity="0"/></linearGradient>`).join('')}</defs>
     ${keys.map((k,i)=>`<path d="${fill(k)}" fill="url(#g${i})"/>
       <path d="${path(k)}" fill="none" stroke="${colors[i]}" stroke-width="2.4"
         stroke-linejoin="round" stroke-linecap="round"/>`).join('')}
-    ${series.map((d,i)=>i%step?'':`<text x="${x(i).toFixed(1)}" y="${h-5}" font-size="11" fill="#8B95A1" text-anchor="middle">${d.label}</text>`).join('')}
+    ${series.map((d,i)=>i%step?'':`<text x="${x(i).toFixed(1)}" y="${h-5}" font-size="11" fill="#9CA3AF" text-anchor="middle">${d.label}</text>`).join('')}
   </svg>`;
 }
 function barChart(vals,labels){
-  const W=760,h=130,P=26,n=vals.length,max=Math.max(1,...vals);
+  const W=900,h=104,P=30,n=vals.length,max=Math.max(1,...vals);
   const bw=(W-P*2)/n*0.68;
   return `<svg viewBox="0 0 ${W} ${h}" style="width:100%;height:auto">
     ${vals.map((v,i)=>{const bx=P+(W-P*2)*(i/n)+((W-P*2)/n-bw)/2, bh=(h-30)*(v/max);
       return `<rect x="${bx.toFixed(1)}" y="${(h-20-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(bh,2).toFixed(1)}"
-        rx="4" fill="#3182F6" opacity="${v?0.9:0.12}"/>`}).join('')}
+        rx="4" fill="#1565F9" opacity="${v?0.9:0.12}"/>`}).join('')}
     ${labels.map((l,i)=>i%3?'':`<text x="${(P+(W-P*2)*(i/n)+(W-P*2)/n/2).toFixed(1)}" y="${h-5}"
-      font-size="11" fill="#8B95A1" text-anchor="middle">${l}</text>`).join('')}
+      font-size="11" fill="#9CA3AF" text-anchor="middle">${l}</text>`).join('')}
   </svg>`;
 }
 
@@ -479,11 +492,12 @@ function statsHTML(){
     ${kpi('g','phone',n,'리드','누적 '+LEADS.length+'건')}
   </div>
 
-  <div class="panel" style="margin-top:14px"><h3>일별 추이<span class="sub">방문 · 순방문자 · 리드</span><span class="lg">방문</span><span class="lg g">순방문자</span><span class="lg r">리드</span></h3>
-    ${areaChart(days,['visits','sessions','leads'],['#3182F6','#10B981','#E5484D'])}</div>
-
-  <div class="panel" style="margin-top:14px"><h3>시간대별 방문<span class="sub">0시 ~ 23시 · 광고 시간대를 정할 때 본다</span></h3>
-    ${barChart(hours,hours.map((_,i)=>i+'시'))}</div>
+  <div class="split" style="grid-template-columns:1.35fr 1fr">
+    <div class="panel"><h3>일별 추이<span class="sub">방문 · 순방문자 · 리드</span><span class="lg">방문</span><span class="lg g">순방문자</span><span class="lg r">리드</span></h3>
+      ${areaChart(days,['visits','sessions','leads'],['#1565F9','#22C55E','#EF4444'])}</div>
+    <div class="panel"><h3>시간대별 방문<span class="sub">0시 ~ 23시 · 광고 시간대를 정할 때</span></h3>
+      ${barChart(hours,hours.map((_,i)=>i+'시'))}</div>
+  </div>
 
   <div class="split">
     <div class="panel"><h3>유입 채널<span class="sub">utm_source · 없으면 referrer 도메인 — 방문 대비 리드</span></h3>
@@ -492,7 +506,7 @@ function statsHTML(){
           <td class="num">${v.l}</td><td class="num">${v.v?(v.l/v.v*100).toFixed(1)+'%':'-'}</td></tr>`)}</div>
     <div class="panel"><h3>기기<span class="sub">모바일 / 데스크톱</span></h3>
       ${(()=>{const g=grp(S,'device','미상');
-        return g.length?donut(g,['#3182F6','#10B981','#F59E0B','#8B5CF6']):'<p class="hint">데이터 없음</p>';})()}</div>
+        return g.length?donut(g,['#1565F9','#22C55E','#FF9800','#8B5CF6']):'<p class="hint">데이터 없음</p>';})()}</div>
     <div class="panel"><h3>캠페인<span class="sub">utm_campaign 기준</span></h3>
       ${table([['캠페인'],['세션',1]],grp(S,'camp','없음'),
         ([k,v])=>`<tr><td>${esc(k)}</td><td class="num">${v}</td></tr>`)}</div>
@@ -501,7 +515,7 @@ function statsHTML(){
         ([k,v])=>`<tr><td>${esc((ST.find(s=>s[0]===k)||[,k])[1])}</td><td class="num">${v}</td></tr>`)}</div>
   </div>
 
-  <div class="panel" style="margin-top:14px"><h3>칼럼별 기여<span class="sub">글을 읽은 세션이 진단·리드까지 간 비율</span></h3>
+  <div class="panel" style="margin-top:12px"><h3>칼럼별 기여<span class="sub">글을 읽은 세션이 진단·리드까지 간 비율</span></h3>
     ${artRows.length?table([['글'],['읽은 세션',1],['진단 시작',1],['리드',1],['전환율',1]],artRows,
       a=>`<tr><td><a href="https://bittalgil.com/#/columns/${esc(a.slug)}" target="_blank">${esc(a.title)}</a></td>
         <td class="num">${a.v}</td><td class="num">${a.started}</td>
@@ -526,12 +540,12 @@ function funnelHTML(){
   const maxLeave=Math.max(1,...qDrop.map(d=>d.leave));
   return `
   <h2 class="sect">어디서 빠져나가나<span class="sub">고칠 지점을 여기서 찾는다</span></h2>
-  <div class="panel" style="margin-top:14px"><h3>퍼널<span class="sub">진입 → 진단 → 계산 → 연락처 → 제출 (세션 단위)</span></h3>
+  <div class="panel" style="margin-top:12px"><h3>퍼널<span class="sub">진입 → 진단 → 계산 → 연락처 → 제출 (세션 단위)</span></h3>
     ${rows.map((r,i)=>{
       const prev=i?rows[i-1].count:r.count;
       const drop=prev-r.count;
       const stepRate=prev?(r.count/prev*100):100;
-      const C=['#3182F6','#3B82F6','#06B6D4','#10B981','#84CC16','#F59E0B','#F43F5E'];
+      const C=['#1565F9','#3B82F6','#06B6D4','#10B981','#84CC16','#FF9800','#F43F5E'];
       return `<div class="bar">
         <div class="lb"><span>${r.label}</span>
           <span class="sub">전체 ${r.overall.toFixed(1)}%${i?' · 직전 →'+stepRate.toFixed(1)+'%':''}</span>
@@ -541,7 +555,7 @@ function funnelHTML(){
       </div>`}).join('')}
     <p class="hint">막대는 전체 방문 대비 비율입니다. 오른쪽 숫자는 직전 단계에서 빠져나간 사람입니다.</p>
   </div>
-  <div class="panel" style="margin-top:14px"><h3>문항별 이탈<span class="sub">가장 긴 막대가 사람을 가장 많이 놓치는 문항</span></h3>
+  <div class="panel" style="margin-top:12px"><h3>문항별 이탈<span class="sub">가장 긴 막대가 사람을 가장 많이 놓치는 문항</span></h3>
     ${qDrop.map(d=>`<div class="bar">
       <div class="lb"><span>${d.q}번 문항</span><span class="sub">진입 ${d.enter}명</span>
         <span class="n" style="color:${d.leave?'var(--warn)':'var(--t4)'}">${d.leave?'−'+d.leave:'0'}</span></div>
@@ -607,7 +621,7 @@ function adsHTML(){
   const today=new Date().toISOString().slice(0,10);
   return `
   <h2 class="sect">광고비와 성과<span class="sub">유입원별 CPA — 어디에 더 쓸지 정한다</span></h2>
-  <div class="panel" style="margin-top:14px"><h3>채널별 ROI<span class="sub">광고비 ÷ 리드 = 1건당 비용</span></h3>
+  <div class="panel" style="margin-top:12px"><h3>채널별 ROI<span class="sub">광고비 ÷ 리드 = 1건당 비용</span></h3>
   <div class="tblwrap">${keys.length?`<table>
     <thead><tr><th>유입원</th><th class="num">방문</th><th class="num">리드</th><th class="num">전환율</th><th class="num">광고비</th><th class="num">CPA</th></tr></thead>
     <tbody>${keys.map(k=>{const v=bySrc[k]||{visit:0,lead:0},sp=spendBy[k]||0;
@@ -620,7 +634,7 @@ function adsHTML(){
         <td class="num">${sp&&v.lead?won(Math.round(sp/v.lead))+'원':'-'}</td>
       </tr>`}).join('')}</tbody></table>`:'<p class="hint">데이터가 없습니다</p>'}</div></div>
 
-  <div class="panel" style="margin-top:14px"><h3>광고비 입력<span class="sub">유입원은 광고 링크의 utm_source 와 같게</span></h3>
+  <div class="panel" style="margin-top:12px"><h3>광고비 입력<span class="sub">유입원은 광고 링크의 utm_source 와 같게</span></h3>
     <div class="tools" style="margin-top:10px">
       <input id="sp_day" type="date" value="${today}">
       <input id="sp_src" placeholder="유입원 (utm_source)" style="min-width:170px">
@@ -637,7 +651,7 @@ function adsHTML(){
       </tr>`).join('')}</tbody></table></div>`:''}
   </div>
 
-  <div class="panel" style="margin-top:14px"><h3>UTM 링크 가이드<span class="sub">클릭하면 복사됩니다 — 표기가 갈리면 통계가 쪼개진다</span></h3>
+  <div class="panel" style="margin-top:12px"><h3>UTM 링크 가이드<span class="sub">클릭하면 복사됩니다 — 표기가 갈리면 통계가 쪼개진다</span></h3>
     <div class="tblwrap" style="margin-top:10px"><table style="min-width:640px">
       <thead><tr><th>채널</th><th>링크</th></tr></thead>
       <tbody>${UTM_T.map(t=>{
